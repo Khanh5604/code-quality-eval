@@ -1,0 +1,1483 @@
+[
+  {
+    "id": "10ea81c6-4061-4052-811c-84a7eac74492",
+    "createdAt": "2025-12-08T06:37:40.627Z",
+    "projectName": "sample-project",
+    "scores": {
+      "project_name": "sample-project",
+      "summary": {
+        "overall": 80,
+        "quality_level": "B"
+      },
+      "meta": {
+        "codeLines": 0,
+        "commentLines": 0,
+        "kLOC": 0,
+        "lintErrors": 0,
+        "complexityAvg": 0,
+        "dupPercent": 0,
+        "commentDensity": 0
+      },
+      "metrics": {
+        "style": 100,
+        "complexity": 100,
+        "duplication": 100,
+        "comment": 20
+      },
+      "created_at": "2025-12-08T06:37:40.625Z"
+    },
+    "eslintResult": {
+      "raw": [
+        {
+          "filePath": "E:\\LVTN\\code-quality-eval\\sample-project\\index.js",
+          "messages": [
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 7,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 7,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      92,
+                      111
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            },
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 9,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 9,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      140,
+                      162
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            },
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 11,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 11,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      191,
+                      212
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            },
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 13,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 13,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      241,
+                      261
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            },
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 15,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 15,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      279,
+                      299
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            }
+          ],
+          "suppressedMessages": [],
+          "errorCount": 0,
+          "fatalErrorCount": 0,
+          "warningCount": 5,
+          "fixableErrorCount": 0,
+          "fixableWarningCount": 0,
+          "source": "function sum(a, b) {\r\n  return a + b;\r\n}\r\n\r\nfunction badFunction(x) {\r\n  if (x > 10) {\r\n    console.log(\"big\");\r\n  } else if (x > 5) {\r\n    console.log(\"medium\");\r\n  } else if (x > 3) {\r\n    console.log(\"small\");\r\n  } else if (x > 1) {\r\n    console.log(\"tiny\");\r\n  } else {\r\n    console.log(\"zero\");\r\n  }\r\n}\r\n\r\nsum(1, 2);\r\nbadFunction(7);\r\n",
+          "usedDeprecatedRules": []
+        }
+      ],
+      "errorCount": 0,
+      "warningCount": 5
+    },
+    "clocResult": {
+      "raw": {
+        "total": 20,
+        "source": 18,
+        "comment": 0,
+        "single": 0,
+        "block": 0
+      },
+      "code": 18,
+      "comment": 0,
+      "blank": 2
+    },
+    "jscpdResult": {
+      "raw": {},
+      "duplicatedLines": 0,
+      "duplicatedPercent": 0
+    }
+  },
+  {
+    "id": "ab7f3eaa-3728-4eb5-b20f-fe699f7234d0",
+    "createdAt": "2025-12-08T06:41:51.418Z",
+    "projectName": "sample-project",
+    "scores": {
+      "project_name": "sample-project",
+      "summary": {
+        "overall": 80,
+        "quality_level": "B"
+      },
+      "meta": {
+        "codeLines": 18,
+        "commentLines": 0,
+        "kLOC": 0.02,
+        "lintErrors": 0,
+        "complexityAvg": 0,
+        "dupPercent": 0,
+        "commentDensity": 0
+      },
+      "metrics": {
+        "style": 100,
+        "complexity": 100,
+        "duplication": 100,
+        "comment": 20
+      },
+      "created_at": "2025-12-08T06:41:51.416Z"
+    },
+    "eslintResult": {
+      "raw": [
+        {
+          "filePath": "E:\\LVTN\\code-quality-eval\\sample-project\\index.js",
+          "messages": [
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 7,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 7,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      92,
+                      111
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            },
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 9,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 9,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      140,
+                      162
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            },
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 11,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 11,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      191,
+                      212
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            },
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 13,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 13,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      241,
+                      261
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            },
+            {
+              "ruleId": "no-console",
+              "severity": 1,
+              "message": "Unexpected console statement.",
+              "line": 15,
+              "column": 5,
+              "nodeType": "MemberExpression",
+              "messageId": "unexpected",
+              "endLine": 15,
+              "endColumn": 16,
+              "suggestions": [
+                {
+                  "fix": {
+                    "range": [
+                      279,
+                      299
+                    ],
+                    "text": ""
+                  },
+                  "messageId": "removeConsole",
+                  "data": {
+                    "propertyName": "log"
+                  },
+                  "desc": "Remove the console.log()."
+                }
+              ]
+            }
+          ],
+          "suppressedMessages": [],
+          "errorCount": 0,
+          "fatalErrorCount": 0,
+          "warningCount": 5,
+          "fixableErrorCount": 0,
+          "fixableWarningCount": 0,
+          "source": "function sum(a, b) {\r\n  return a + b;\r\n}\r\n\r\nfunction badFunction(x) {\r\n  if (x > 10) {\r\n    console.log(\"big\");\r\n  } else if (x > 5) {\r\n    console.log(\"medium\");\r\n  } else if (x > 3) {\r\n    console.log(\"small\");\r\n  } else if (x > 1) {\r\n    console.log(\"tiny\");\r\n  } else {\r\n    console.log(\"zero\");\r\n  }\r\n}\r\n\r\nsum(1, 2);\r\nbadFunction(7);\r\n",
+          "usedDeprecatedRules": []
+        }
+      ],
+      "errorCount": 0,
+      "warningCount": 5
+    },
+    "clocResult": {
+      "raw": {
+        "total": 20,
+        "source": 18,
+        "comment": 0,
+        "single": 0,
+        "block": 0
+      },
+      "code": 18,
+      "comment": 0,
+      "blank": 2
+    },
+    "jscpdResult": {
+      "raw": {},
+      "duplicatedLines": 0,
+      "duplicatedPercent": 0
+    }
+  },
+  {
+    "id": "86267550-e329-4475-8bad-536c1b10eb1a",
+    "createdAt": "2025-12-10T04:31:54.734Z",
+    "projectName": "sample-project.zip",
+    "scores": {
+      "project_name": "sample-project.zip",
+      "summary": {
+        "overall": 100,
+        "quality_level": "A"
+      },
+      "meta": {
+        "codeLines": 71,
+        "commentLines": 8,
+        "kLOC": 0.07,
+        "lintErrors": 0,
+        "complexityAvg": 0,
+        "dupPercent": 0,
+        "commentDensity": 11.27
+      },
+      "metrics": {
+        "style": 100,
+        "complexity": 100,
+        "duplication": 100,
+        "comment": 100
+      },
+      "created_at": "2025-12-10T04:31:54.733Z"
+    },
+    "eslintResult": {
+      "raw": [
+        {
+          "filePath": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\1e72c3a0af685736cd6d32dd563f7681_extracted\\controllers\\userController.js",
+          "messages": [],
+          "suppressedMessages": [],
+          "errorCount": 0,
+          "fatalErrorCount": 0,
+          "warningCount": 0,
+          "fixableErrorCount": 0,
+          "fixableWarningCount": 0,
+          "usedDeprecatedRules": []
+        },
+        {
+          "filePath": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\1e72c3a0af685736cd6d32dd563f7681_extracted\\index.js",
+          "messages": [],
+          "suppressedMessages": [],
+          "errorCount": 0,
+          "fatalErrorCount": 0,
+          "warningCount": 0,
+          "fixableErrorCount": 0,
+          "fixableWarningCount": 0,
+          "usedDeprecatedRules": []
+        },
+        {
+          "filePath": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\1e72c3a0af685736cd6d32dd563f7681_extracted\\utils\\greet.js",
+          "messages": [],
+          "suppressedMessages": [],
+          "errorCount": 0,
+          "fatalErrorCount": 0,
+          "warningCount": 0,
+          "fixableErrorCount": 0,
+          "fixableWarningCount": 0,
+          "usedDeprecatedRules": []
+        },
+        {
+          "filePath": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\1e72c3a0af685736cd6d32dd563f7681_extracted\\utils\\math.js",
+          "messages": [],
+          "suppressedMessages": [],
+          "errorCount": 0,
+          "fatalErrorCount": 0,
+          "warningCount": 0,
+          "fixableErrorCount": 0,
+          "fixableWarningCount": 0,
+          "usedDeprecatedRules": []
+        }
+      ],
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    "clocResult": {
+      "raw": {
+        "total": 89,
+        "source": 71,
+        "comment": 8,
+        "single": 8,
+        "block": 0
+      },
+      "code": 71,
+      "comment": 8,
+      "blank": 10
+    },
+    "jscpdResult": {
+      "raw": {},
+      "duplicatedLines": 0,
+      "duplicatedPercent": 0
+    }
+  },
+  {
+    "id": "1beab3a5-dd5d-4aed-8447-e56f2558c102",
+    "createdAt": "2025-12-10T04:59:26.044Z",
+    "projectName": "buggy_python_project.zip",
+    "scores": {
+      "project_name": "buggy_python_project.zip",
+      "summary": {
+        "overall": 60,
+        "quality_level": "C"
+      },
+      "meta": {
+        "codeLines": 49,
+        "commentLines": 22,
+        "kLOC": 0.05,
+        "lintErrors": 3,
+        "complexityAvg": 2.33,
+        "dupPercent": 0,
+        "commentDensity": 44.9
+      },
+      "metrics": {
+        "style": 0,
+        "complexity": 100,
+        "duplication": 100,
+        "comment": 60
+      },
+      "created_at": "2025-12-10T04:59:26.043Z"
+    },
+    "eslintResult": {
+      "raw": [],
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    "clocResult": {
+      "raw": {
+        "total": 101,
+        "source": 49,
+        "comment": 22,
+        "single": 11,
+        "block": 11
+      },
+      "code": 49,
+      "comment": 22,
+      "blank": 30
+    },
+    "jscpdResult": {
+      "raw": {},
+      "duplicatedLines": 0,
+      "duplicatedPercent": 0
+    },
+    "ruffResult": {
+      "raw": [
+        {
+          "cell": null,
+          "code": "F821",
+          "end_location": {
+            "column": 9,
+            "row": 19
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\45dbe8bc70290b1566f86e7aac4afddd_extracted\\buggy_project\\cli.py",
+          "fix": null,
+          "location": {
+            "column": 5,
+            "row": 19
+          },
+          "message": "Undefined name `mian`",
+          "noqa_row": 19,
+          "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+        },
+        {
+          "cell": null,
+          "code": "F821",
+          "end_location": {
+            "column": 35,
+            "row": 8
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\45dbe8bc70290b1566f86e7aac4afddd_extracted\\buggy_project\\report.py",
+          "fix": null,
+          "location": {
+            "column": 29,
+            "row": 8
+          },
+          "message": "Undefined name `valeus`",
+          "noqa_row": 8,
+          "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+        },
+        {
+          "cell": null,
+          "code": "F541",
+          "end_location": {
+            "column": 64,
+            "row": 11
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\45dbe8bc70290b1566f86e7aac4afddd_extracted\\buggy_project\\report.py",
+          "fix": {
+            "applicability": "safe",
+            "edits": [
+              {
+                "content": "\"Report: count={len(values)} average={avg:.2f}\"",
+                "end_location": {
+                  "column": 64,
+                  "row": 11
+                },
+                "location": {
+                  "column": 12,
+                  "row": 11
+                }
+              }
+            ],
+            "message": "Remove extraneous `f` prefix"
+          },
+          "location": {
+            "column": 12,
+            "row": 11
+          },
+          "message": "f-string without any placeholders",
+          "noqa_row": 11,
+          "url": "https://docs.astral.sh/ruff/rules/f-string-missing-placeholders"
+        }
+      ],
+      "errorCount": 3
+    },
+    "radonResult": {
+      "raw": {
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\45dbe8bc70290b1566f86e7aac4afddd_extracted\\buggy_project\\cli.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 6,
+            "complexity": 1,
+            "col_offset": 0,
+            "endline": 14,
+            "name": "main",
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\45dbe8bc70290b1566f86e7aac4afddd_extracted\\buggy_project\\data_processing.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 2,
+            "complexity": 5,
+            "col_offset": 0,
+            "endline": 14,
+            "name": "normalize",
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\45dbe8bc70290b1566f86e7aac4afddd_extracted\\buggy_project\\main.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 5,
+            "complexity": 1,
+            "col_offset": 0,
+            "endline": 12,
+            "name": "main",
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\45dbe8bc70290b1566f86e7aac4afddd_extracted\\buggy_project\\report.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 5,
+            "complexity": 1,
+            "col_offset": 0,
+            "endline": 12,
+            "name": "generate_report",
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\45dbe8bc70290b1566f86e7aac4afddd_extracted\\buggy_project\\utils.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 5,
+            "complexity": 4,
+            "col_offset": 0,
+            "endline": 25,
+            "name": "load_numbers_from_file",
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 28,
+            "complexity": 2,
+            "col_offset": 0,
+            "endline": 38,
+            "name": "calculate_average",
+            "closures": []
+          }
+        ]
+      },
+      "ccAvg": 2.3333333333333335,
+      "functions": 6
+    }
+  },
+  {
+    "id": "85ed11ce-0a92-4542-8a32-221b0d8d8e18",
+    "createdAt": "2025-12-10T05:03:01.289Z",
+    "projectName": "buggy_python_project.zip",
+    "scores": {
+      "project_name": "buggy_python_project.zip",
+      "summary": {
+        "overall": 60,
+        "quality_level": "C"
+      },
+      "meta": {
+        "codeLines": 49,
+        "commentLines": 22,
+        "kLOC": 0.05,
+        "lintErrors": 3,
+        "complexityAvg": 2.33,
+        "dupPercent": 0,
+        "commentDensity": 44.9
+      },
+      "metrics": {
+        "style": 0,
+        "complexity": 100,
+        "duplication": 100,
+        "comment": 60
+      },
+      "created_at": "2025-12-10T05:03:01.288Z"
+    },
+    "eslintResult": {
+      "raw": [],
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    "clocResult": {
+      "raw": {
+        "total": 101,
+        "source": 49,
+        "comment": 22,
+        "single": 11,
+        "block": 11
+      },
+      "code": 49,
+      "comment": 22,
+      "blank": 30
+    },
+    "jscpdResult": {
+      "raw": {},
+      "duplicatedLines": 0,
+      "duplicatedPercent": 0
+    },
+    "ruffResult": {
+      "raw": [
+        {
+          "cell": null,
+          "code": "F821",
+          "end_location": {
+            "column": 9,
+            "row": 19
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\cli.py",
+          "fix": null,
+          "location": {
+            "column": 5,
+            "row": 19
+          },
+          "message": "Undefined name `mian`",
+          "noqa_row": 19,
+          "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+        },
+        {
+          "cell": null,
+          "code": "F821",
+          "end_location": {
+            "column": 35,
+            "row": 8
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\report.py",
+          "fix": null,
+          "location": {
+            "column": 29,
+            "row": 8
+          },
+          "message": "Undefined name `valeus`",
+          "noqa_row": 8,
+          "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+        },
+        {
+          "cell": null,
+          "code": "F541",
+          "end_location": {
+            "column": 64,
+            "row": 11
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\report.py",
+          "fix": {
+            "applicability": "safe",
+            "edits": [
+              {
+                "content": "\"Report: count={len(values)} average={avg:.2f}\"",
+                "end_location": {
+                  "column": 64,
+                  "row": 11
+                },
+                "location": {
+                  "column": 12,
+                  "row": 11
+                }
+              }
+            ],
+            "message": "Remove extraneous `f` prefix"
+          },
+          "location": {
+            "column": 12,
+            "row": 11
+          },
+          "message": "f-string without any placeholders",
+          "noqa_row": 11,
+          "url": "https://docs.astral.sh/ruff/rules/f-string-missing-placeholders"
+        }
+      ],
+      "errorCount": 3
+    },
+    "radonResult": {
+      "raw": {
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\cli.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 1,
+            "lineno": 6,
+            "endline": 14,
+            "name": "main",
+            "col_offset": 0,
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\data_processing.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 5,
+            "lineno": 2,
+            "endline": 14,
+            "name": "normalize",
+            "col_offset": 0,
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\main.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 1,
+            "lineno": 5,
+            "endline": 12,
+            "name": "main",
+            "col_offset": 0,
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\report.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 1,
+            "lineno": 5,
+            "endline": 12,
+            "name": "generate_report",
+            "col_offset": 0,
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\utils.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 4,
+            "lineno": 5,
+            "endline": 25,
+            "name": "load_numbers_from_file",
+            "col_offset": 0,
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 2,
+            "lineno": 28,
+            "endline": 38,
+            "name": "calculate_average",
+            "col_offset": 0,
+            "closures": []
+          }
+        ]
+      },
+      "ccAvg": 2.3333333333333335,
+      "functions": 6
+    },
+    "issues": [
+      {
+        "tool": "ruff",
+        "file": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\cli.py",
+        "line": 19,
+        "column": 5,
+        "severity": "error",
+        "rule": "F821",
+        "message": "Undefined name `mian`",
+        "fix": null
+      },
+      {
+        "tool": "ruff",
+        "file": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\report.py",
+        "line": 8,
+        "column": 29,
+        "severity": "error",
+        "rule": "F821",
+        "message": "Undefined name `valeus`",
+        "fix": null
+      },
+      {
+        "tool": "ruff",
+        "file": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d6c7216adf442b7af1522183741e3c21_extracted\\buggy_project\\report.py",
+        "line": 11,
+        "column": 12,
+        "severity": "error",
+        "rule": "F541",
+        "message": "f-string without any placeholders",
+        "fix": null
+      }
+    ]
+  },
+  {
+    "id": "2e80b2a9-e029-439d-8242-1df9c4449d34",
+    "createdAt": "2025-12-10T05:21:44.495Z",
+    "projectName": "my-project.zip",
+    "scores": {
+      "project_name": "my-project.zip",
+      "summary": {
+        "overall": 60,
+        "quality_level": "C"
+      },
+      "meta": {
+        "codeLines": 23,
+        "commentLines": 15,
+        "kLOC": 0.02,
+        "lintErrors": 1,
+        "complexityAvg": 1.75,
+        "dupPercent": 0,
+        "commentDensity": 65.22
+      },
+      "metrics": {
+        "style": 0,
+        "complexity": 100,
+        "duplication": 100,
+        "comment": 60
+      },
+      "created_at": "2025-12-10T05:21:44.494Z"
+    },
+    "eslintResult": {
+      "raw": [],
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    "clocResult": {
+      "raw": {
+        "total": 55,
+        "source": 23,
+        "comment": 15,
+        "single": 12,
+        "block": 3
+      },
+      "code": 23,
+      "comment": 15,
+      "blank": 17
+    },
+    "jscpdResult": {
+      "raw": {},
+      "duplicatedLines": 0,
+      "duplicatedPercent": 0
+    },
+    "ruffResult": {
+      "raw": [
+        {
+          "cell": null,
+          "code": "F821",
+          "end_location": {
+            "column": 17,
+            "row": 44
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\2573cbc869f0d54b34bfaf2afe7805db_extracted\\my-project\\src\\bad.py",
+          "fix": null,
+          "location": {
+            "column": 11,
+            "row": 44
+          },
+          "message": "Undefined name `devide`",
+          "noqa_row": 44,
+          "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+        }
+      ],
+      "errorCount": 1
+    },
+    "radonResult": {
+      "raw": {
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\2573cbc869f0d54b34bfaf2afe7805db_extracted\\my-project\\src\\bad.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "name": "average",
+            "col_offset": 0,
+            "complexity": 3,
+            "endline": 27,
+            "lineno": 14,
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "name": "sqrt_list",
+            "col_offset": 0,
+            "complexity": 2,
+            "endline": 36,
+            "lineno": 30,
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "name": "divide",
+            "col_offset": 0,
+            "complexity": 1,
+            "endline": 11,
+            "lineno": 8,
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "name": "main",
+            "col_offset": 0,
+            "complexity": 1,
+            "endline": 51,
+            "lineno": 39,
+            "closures": []
+          }
+        ]
+      },
+      "ccAvg": 1.75,
+      "functions": 4
+    },
+    "issues": [
+      {
+        "tool": "ruff",
+        "file": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\2573cbc869f0d54b34bfaf2afe7805db_extracted\\my-project\\src\\bad.py",
+        "line": 44,
+        "column": 11,
+        "severity": "error",
+        "rule": "F821",
+        "message": "Undefined name `devide`",
+        "fix": null
+      }
+    ]
+  },
+  {
+    "id": "1a1e9cf0-c563-415c-bb26-332c6313978a",
+    "createdAt": "2025-12-10T05:24:28.519Z",
+    "projectName": "sample-python-bad.zip",
+    "scores": {
+      "project_name": "sample-python-bad.zip",
+      "summary": {
+        "overall": 70,
+        "quality_level": "B"
+      },
+      "meta": {
+        "codeLines": 54,
+        "commentLines": 7,
+        "kLOC": 0.05,
+        "lintErrors": 2,
+        "complexityAvg": 3.67,
+        "dupPercent": 0,
+        "commentDensity": 12.96
+      },
+      "metrics": {
+        "style": 0,
+        "complexity": 100,
+        "duplication": 100,
+        "comment": 100
+      },
+      "created_at": "2025-12-10T05:24:28.519Z"
+    },
+    "eslintResult": {
+      "raw": [],
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    "clocResult": {
+      "raw": {
+        "total": 69,
+        "source": 54,
+        "comment": 7,
+        "single": 7,
+        "block": 0
+      },
+      "code": 54,
+      "comment": 7,
+      "blank": 8
+    },
+    "jscpdResult": {
+      "raw": {},
+      "duplicatedLines": 0,
+      "duplicatedPercent": 0
+    },
+    "ruffResult": {
+      "raw": [
+        {
+          "cell": null,
+          "code": "F401",
+          "end_location": {
+            "column": 12,
+            "row": 3
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d61e76824fd2f6a77d7a42db4c329c50_extracted\\main.py",
+          "fix": {
+            "applicability": "safe",
+            "edits": [
+              {
+                "content": "",
+                "end_location": {
+                  "column": 1,
+                  "row": 4
+                },
+                "location": {
+                  "column": 1,
+                  "row": 3
+                }
+              }
+            ],
+            "message": "Remove unused import: `math`"
+          },
+          "location": {
+            "column": 8,
+            "row": 3
+          },
+          "message": "`math` imported but unused",
+          "noqa_row": 3,
+          "url": "https://docs.astral.sh/ruff/rules/unused-import"
+        },
+        {
+          "cell": null,
+          "code": "F841",
+          "end_location": {
+            "column": 15,
+            "row": 31
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d61e76824fd2f6a77d7a42db4c329c50_extracted\\main.py",
+          "fix": {
+            "applicability": "unsafe",
+            "edits": [
+              {
+                "content": "",
+                "end_location": {
+                  "column": 1,
+                  "row": 32
+                },
+                "location": {
+                  "column": 1,
+                  "row": 31
+                }
+              }
+            ],
+            "message": "Remove assignment to unused variable `unused_var`"
+          },
+          "location": {
+            "column": 5,
+            "row": 31
+          },
+          "message": "Local variable `unused_var` is assigned to but never used",
+          "noqa_row": 31,
+          "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+        }
+      ],
+      "errorCount": 2
+    },
+    "radonResult": {
+      "raw": {
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d61e76824fd2f6a77d7a42db4c329c50_extracted\\main.py": [
+          {
+            "type": "function",
+            "rank": "C",
+            "lineno": 5,
+            "complexity": 12,
+            "col_offset": 0,
+            "name": "bad_function",
+            "endline": 32,
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 34,
+            "complexity": 3,
+            "col_offset": 0,
+            "name": "duplicate_logic",
+            "endline": 40,
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 42,
+            "complexity": 3,
+            "col_offset": 0,
+            "name": "duplicate_logic_2",
+            "endline": 49,
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d61e76824fd2f6a77d7a42db4c329c50_extracted\\utils.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 9,
+            "complexity": 2,
+            "col_offset": 0,
+            "name": "badly_formatted",
+            "endline": 14,
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 3,
+            "complexity": 1,
+            "col_offset": 0,
+            "name": "add",
+            "endline": 4,
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "lineno": 6,
+            "complexity": 1,
+            "col_offset": 0,
+            "name": "mul",
+            "endline": 7,
+            "closures": []
+          }
+        ]
+      },
+      "ccAvg": 3.6666666666666665,
+      "functions": 6
+    },
+    "issues": [
+      {
+        "tool": "ruff",
+        "file": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d61e76824fd2f6a77d7a42db4c329c50_extracted\\main.py",
+        "line": 3,
+        "column": 8,
+        "severity": "error",
+        "rule": "F401",
+        "message": "`math` imported but unused",
+        "fix": null
+      },
+      {
+        "tool": "ruff",
+        "file": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d61e76824fd2f6a77d7a42db4c329c50_extracted\\main.py",
+        "line": 31,
+        "column": 5,
+        "severity": "error",
+        "rule": "F841",
+        "message": "Local variable `unused_var` is assigned to but never used",
+        "fix": null
+      }
+    ]
+  },
+  {
+    "id": "f8d2b80c-32e9-4782-8e99-34d1339ee0d6",
+    "createdAt": "2025-12-10T06:10:15.377Z",
+    "projectName": "sample-python-bad.zip",
+    "scores": {
+      "project_name": "sample-python-bad.zip",
+      "summary": {
+        "overall": 70,
+        "quality_level": "B"
+      },
+      "meta": {
+        "codeLines": 54,
+        "commentLines": 7,
+        "kLOC": 0.05,
+        "lintErrors": 2,
+        "complexityAvg": 3.67,
+        "dupPercent": 0,
+        "commentDensity": 12.96
+      },
+      "metrics": {
+        "style": 0,
+        "complexity": 100,
+        "duplication": 100,
+        "comment": 100
+      },
+      "created_at": "2025-12-10T06:10:15.374Z"
+    },
+    "eslintResult": {
+      "raw": [],
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    "clocResult": {
+      "raw": {
+        "total": 69,
+        "source": 54,
+        "comment": 7,
+        "single": 7,
+        "block": 0
+      },
+      "code": 54,
+      "comment": 7,
+      "blank": 8
+    },
+    "jscpdResult": {
+      "raw": {},
+      "duplicatedLines": 0,
+      "duplicatedPercent": 0
+    },
+    "ruffResult": {
+      "raw": [
+        {
+          "cell": null,
+          "code": "F401",
+          "end_location": {
+            "column": 12,
+            "row": 3
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d3c18a8f90a4ed95165e55b38faa7ef4_extracted\\main.py",
+          "fix": {
+            "applicability": "safe",
+            "edits": [
+              {
+                "content": "",
+                "end_location": {
+                  "column": 1,
+                  "row": 4
+                },
+                "location": {
+                  "column": 1,
+                  "row": 3
+                }
+              }
+            ],
+            "message": "Remove unused import: `math`"
+          },
+          "location": {
+            "column": 8,
+            "row": 3
+          },
+          "message": "`math` imported but unused",
+          "noqa_row": 3,
+          "url": "https://docs.astral.sh/ruff/rules/unused-import"
+        },
+        {
+          "cell": null,
+          "code": "F841",
+          "end_location": {
+            "column": 15,
+            "row": 31
+          },
+          "filename": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d3c18a8f90a4ed95165e55b38faa7ef4_extracted\\main.py",
+          "fix": {
+            "applicability": "unsafe",
+            "edits": [
+              {
+                "content": "",
+                "end_location": {
+                  "column": 1,
+                  "row": 32
+                },
+                "location": {
+                  "column": 1,
+                  "row": 31
+                }
+              }
+            ],
+            "message": "Remove assignment to unused variable `unused_var`"
+          },
+          "location": {
+            "column": 5,
+            "row": 31
+          },
+          "message": "Local variable `unused_var` is assigned to but never used",
+          "noqa_row": 31,
+          "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+        }
+      ],
+      "errorCount": 2
+    },
+    "radonResult": {
+      "raw": {
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d3c18a8f90a4ed95165e55b38faa7ef4_extracted\\main.py": [
+          {
+            "type": "function",
+            "rank": "C",
+            "complexity": 12,
+            "lineno": 5,
+            "col_offset": 0,
+            "endline": 32,
+            "name": "bad_function",
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 3,
+            "lineno": 34,
+            "col_offset": 0,
+            "endline": 40,
+            "name": "duplicate_logic",
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 3,
+            "lineno": 42,
+            "col_offset": 0,
+            "endline": 49,
+            "name": "duplicate_logic_2",
+            "closures": []
+          }
+        ],
+        "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d3c18a8f90a4ed95165e55b38faa7ef4_extracted\\utils.py": [
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 2,
+            "lineno": 9,
+            "col_offset": 0,
+            "endline": 14,
+            "name": "badly_formatted",
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 1,
+            "lineno": 3,
+            "col_offset": 0,
+            "endline": 4,
+            "name": "add",
+            "closures": []
+          },
+          {
+            "type": "function",
+            "rank": "A",
+            "complexity": 1,
+            "lineno": 6,
+            "col_offset": 0,
+            "endline": 7,
+            "name": "mul",
+            "closures": []
+          }
+        ]
+      },
+      "ccAvg": 3.6666666666666665,
+      "functions": 6
+    },
+    "issues": [
+      {
+        "tool": "ruff",
+        "file": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d3c18a8f90a4ed95165e55b38faa7ef4_extracted\\main.py",
+        "line": 3,
+        "column": 8,
+        "severity": "error",
+        "rule": "F401",
+        "message": "`math` imported but unused",
+        "fix": null,
+        "suggestion": "Xoá import 'math' nếu không dùng, hoặc sử dụng nó trong code."
+      },
+      {
+        "tool": "ruff",
+        "file": "E:\\LVTN\\code-quality-eval\\Backend\\uploads\\d3c18a8f90a4ed95165e55b38faa7ef4_extracted\\main.py",
+        "line": 31,
+        "column": 5,
+        "severity": "error",
+        "rule": "F841",
+        "message": "Local variable `unused_var` is assigned to but never used",
+        "fix": null,
+        "suggestion": "Xoá biến 'biến' nếu không dùng, hoặc sử dụng biến này trong xử lý."
+      }
+    ]
+  }
+]

@@ -1,0 +1,45 @@
+/* src/index.css */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f3f4f6;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    margin: 0;
+  }
+
+  .layout-sidebar,
+  .layout-topbar,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-shell,
+  .layout-content,
+  .layout-main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .layout-main {
+    padding: 0 !important;
+  }
+
+  .report-page {
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+
+  .report-card {
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+}

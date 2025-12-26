@@ -1,0 +1,44 @@
+{
+  "name": "code-quality-eval",
+  "version": "1.0.0",
+  "description": "Hệ thống web đánh giá chất lượng mã nguồn tự động",
+  "main": "Backend/web/index.js",
+  "scripts": {
+    "start": "node Backend/web/index.js",
+    "dev": "nodemon --watch Backend/web --watch Backend/tools --ext js,json Backend/web/index.js",
+    "aggregate:sample": "node Backend/tools/aggregate-cli.js",
+    "test": "node Backend/web/data/storeSupabase.test.js && node Backend/tools/scorer.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Khanh5604/code-quality-eval.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Khanh5604/code-quality-eval/issues"
+  },
+  "homepage": "https://github.com/Khanh5604/code-quality-eval#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.87.1",
+    "adm-zip": "^0.5.16",
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.19.0",
+    "glob": "^13.0.0",
+    "multer": "^1.4.5-lts.1",
+    "react-router-dom": "^7.10.1",
+    "recharts": "^3.5.1",
+    "sloc": "^0.3.2",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "cloc": "^2.6.0",
+    "eslint": "^9.39.1",
+    "jscpd": "^4.0.5",
+    "nodemon": "^3.1.0"
+  }
+}
