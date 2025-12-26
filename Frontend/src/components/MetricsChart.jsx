@@ -20,9 +20,19 @@ export default function MetricsChart({ metrics }) {
   ];
 
   return (
-    <div style={{ padding: "16px", borderRadius: "12px", background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", marginBottom: "16px", height: "320px" }}>
+    <div
+      style={{
+        padding: "16px",
+        borderRadius: "12px",
+        background: "white",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: "16px",
+        minWidth: 0,
+        height: "320px"
+      }}
+    >
       <h3 style={{ marginBottom: "8px" }}>Điểm chi tiết theo tiêu chí</h3>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height={260}>
         <RadarChart data={data}>
           <PolarGrid />
           <PolarAngleAxis dataKey="metric" />

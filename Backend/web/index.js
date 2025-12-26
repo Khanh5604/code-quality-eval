@@ -14,9 +14,18 @@ const ARCHIVE_TTL_HOURS = Number(process.env.ARCHIVE_TTL_HOURS || 24 * 7);
 const ARCHIVE_CLEAN_INTERVAL_HOURS = Number(process.env.ARCHIVE_CLEAN_INTERVAL_HOURS || 6);
 const ARCHIVE_WARN_MB = Number(process.env.ARCHIVE_WARN_MB || 512); // cảnh báo khi archive > ngưỡng
 
+// Hỗ trợ nhiều origin, phân tách bởi dấu phẩy để tiện dùng cho localhost và Vercel.
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || "http://localhost:5173").split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow server-to-server
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      return callback(new Error(`CORS blocked for origin ${origin}`));
+    },
     credentials: true
   })
 );
