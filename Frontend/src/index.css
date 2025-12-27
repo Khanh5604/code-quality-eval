@@ -10,36 +10,31 @@ body {
 }
 
 @media print {
-  body {
-    background: #ffffff !important;
-    margin: 0;
+  /* 1. Ẩn toàn bộ màn hình */
+  body * {
+    visibility: hidden !important;
   }
 
-  .layout-sidebar,
-  .layout-topbar,
-  .no-print {
-    display: none !important;
+  /* 2. Chỉ hiện report */
+  .report-page,
+  .report-page * {
+    visibility: visible !important;
   }
 
-  .app-shell,
-  .layout-content,
-  .layout-main {
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .layout-main {
-    padding: 0 !important;
-  }
-
+  /* 3. Đưa report về góc trên trái */
   .report-page {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
     background: #ffffff !important;
-    padding: 0 !important;
   }
 
+  /* 4. Dọn layout thừa */
   .report-card {
     box-shadow: none !important;
     border: none !important;
     background: #ffffff !important;
   }
 }
+

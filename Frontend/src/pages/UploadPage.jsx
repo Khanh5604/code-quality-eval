@@ -1,13 +1,24 @@
-// src/pages/UploadPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+
+/* ================= CONSTANT ================= */
+const ZIP_STRUCTURE = `
+project-name.zip
+|- src/
+|  |- index.js
+|  |- app.js
+|  |- ...
+|- package.json
+|- README.md
+|- tsconfig.json (neu co)
+`.trim();
 
 const languages = [
   { label: "Tự động nhận diện", value: "auto" },
   { label: "JavaScript / TypeScript", value: "javascript" },
   { label: "Python", value: "python" },
-  { label: "Java", value: "java" }
+  { label: "Java", value: "java" },
 ];
 
 export default function UploadPage() {
@@ -20,6 +31,7 @@ export default function UploadPage() {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   const handleFileChange = (f) => {
@@ -34,18 +46,8 @@ export default function UploadPage() {
     if (f && f.name.endsWith(".zip")) {
       handleFileChange(f);
     } else {
-      setError("Vui lòng thả tệp .zip hợp lệ");
+      setError("Vui lòng chọn tệp .zip hợp lệ.");
     }
-  };
-
-  const onDragOver = (e) => {
-    e.preventDefault();
-    setDragging(true);
-  };
-
-  const onDragLeave = (e) => {
-    e.preventDefault();
-    setDragging(false);
   };
 
   const resetForm = () => {
@@ -63,30 +65,29 @@ export default function UploadPage() {
     setError("");
 
     if (uploadMethod === "link") {
-      setError("Hiện tại chỉ hỗ trợ tải file .zip. Vui lòng chọn tệp .zip.");
+      setError("Hiện tại hệ thống chỉ hỗ trợ phân tích từ file .zip.");
       return;
     }
 
     if (!file) {
-      setError("Vui lòng chọn một file .zip");
+      setError("Vui lòng chọn file .zip để phân tích.");
       return;
     }
 
     const formData = new FormData();
     formData.append("projectZip", file);
-    if (projectName) formData.append("projectName", projectName);
+    formData.append("projectName", projectName);
     if (description) formData.append("description", description);
-    if (language && language !== "auto") formData.append("language", language);
+    if (language !== "auto") formData.append("language", language);
 
     try {
       setLoading(true);
       const res = await api.post("/analyze", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { "Content-Type": "multipart/form-data" },
       });
       navigate(`/result/${res.data.id}`);
     } catch (err) {
-      console.error(err);
-      setError(err?.response?.data?.message || "Có lỗi xảy ra khi phân tích");
+      setError(err?.response?.data?.message || "Có lỗi xảy ra khi phân tích.");
     } finally {
       setLoading(false);
     }
@@ -94,18 +95,23 @@ export default function UploadPage() {
 
   return (
     <div style={ui.page}>
-      
+      {/* ===== HEADER NGOÀI (GIỐNG HISTORY) ===== */}
+      <div style={ui.headerRow}>
+        <p style={ui.overline}>PHÂN TÍCH</p>
+        <h1 style={ui.title}>Thêm dự án mới</h1>
+        <p style={ui.subtitle}>
+          Nhập thông tin và tải mã nguồn để hệ thống tiến hành phân tích tự động.
+        </p>
+      </div>
 
-      <div style={ui.layout}>
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={ui.formCard}>
-          <h2 style={ui.heading}>Thêm dự án mới</h2>
-          <p style={ui.subheading}>
-            Nhập thông tin và tải mã nguồn để tiến hành phân tích tự động.
-          </p>
+      {/* ===== CARD ===== */}
+      <div style={ui.card}>
+        <form onSubmit={handleSubmit}>
+          {/* ===== SECTION: THÔNG TIN DỰ ÁN ===== */}
+          <div style={ui.sectionDivider}>Thông tin dự án</div>
 
           <div style={ui.field}>
-            <label style={ui.label}>Tên dự án*</label>
+            <label style={ui.label}>Tên dự án *</label>
             <input
               style={ui.input}
               value={projectName}
@@ -118,15 +124,15 @@ export default function UploadPage() {
           <div style={ui.field}>
             <label style={ui.label}>Mô tả dự án</label>
             <textarea
-              style={{ ...ui.input, minHeight: 90, resize: "vertical" }}
+              style={{ ...ui.input, minHeight: 90 }}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ghi chú ngắn về dự án, chức năng, mục tiêu..."
+              placeholder="Mô tả ngắn về chức năng và mục tiêu của dự án..."
             />
           </div>
 
           <div style={ui.field}>
-            <label style={ui.label}>Ngôn ngữ code*</label>
+            <label style={ui.label}>Ngôn ngữ mã nguồn *</label>
             <select
               style={ui.input}
               value={language}
@@ -140,17 +146,18 @@ export default function UploadPage() {
             </select>
           </div>
 
+          {/* ===== SECTION: MÃ NGUỒN ===== */}
+          <div style={ui.sectionDivider}>Mã nguồn</div>
+
           <div style={ui.field}>
-            <label style={ui.label}>Chọn cách lấy mã nguồn</label>
+            <label style={ui.label}>Cách lấy mã nguồn</label>
             <div style={ui.toggleRow}>
               <button
                 type="button"
                 onClick={() => setUploadMethod("file")}
                 style={{
                   ...ui.toggleBtn,
-                  background: uploadMethod === "file" ? "#e0e7ff" : "#f8fafc",
-                  color: uploadMethod === "file" ? "#1d4ed8" : "#0f172a",
-                  borderColor: uploadMethod === "file" ? "#c7d2fe" : "#e2e8f0"
+                  ...(uploadMethod === "file" ? ui.toggleActive : {}),
                 }}
               >
                 Tải file .zip
@@ -160,68 +167,77 @@ export default function UploadPage() {
                 onClick={() => setUploadMethod("link")}
                 style={{
                   ...ui.toggleBtn,
-                  background: uploadMethod === "link" ? "#e0e7ff" : "#f8fafc",
-                  color: uploadMethod === "link" ? "#1d4ed8" : "#0f172a",
-                  borderColor: uploadMethod === "link" ? "#c7d2fe" : "#e2e8f0"
+                  ...(uploadMethod === "link" ? ui.toggleActive : {}),
                 }}
               >
-                Dán link Github/GitLab
+                Dán link GitHub/GitLab
               </button>
             </div>
           </div>
 
-          {uploadMethod === "link" && (
-            <div style={ui.field}>
-              <label style={ui.label}>Link repo (chưa hỗ trợ tự clone)</label>
-              <input
-                style={ui.input}
-                value={repoLink}
-                onChange={(e) => setRepoLink(e.target.value)}
-                placeholder="https://github.com/org/repo"
-              />
-              <p style={ui.helper}>Hiện tại hệ thống chỉ nhận file .zip để phân tích.</p>
-            </div>
-          )}
-
           {uploadMethod === "file" && (
-            <div
-              style={{
-                ...ui.dropzone,
-                borderColor: dragging ? "#2563eb" : "#e2e8f0",
-                background: dragging ? "#f8fafc" : "#f9fafb"
-              }}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onClick={() => document.getElementById("projectZipInput")?.click()}
-            >
-              <div style={{ fontSize: 32 }}>☁️</div>
-              <p style={{ margin: "6px 0", fontWeight: 600 }}>Kéo & thả tệp mã nguồn vào đây</p>
-              <p style={{ margin: 0, color: "#475569", fontSize: 13 }}>
-                Hoặc nhấn để chọn tệp thủ công (.zip)
-              </p>
-              <input
-                id="projectZipInput"
-                type="file"
-                accept=".zip"
-                style={{ display: "none" }}
-                onChange={(e) => handleFileChange(e.target.files?.[0])}
-              />
-              {file && (
-                <div style={{ marginTop: 10, color: "#0f172a", fontSize: 13 }}>
-                  Đã chọn: <strong>{file.name}</strong>
+            <>
+              <div
+                style={{
+                  ...ui.dropzone,
+                  ...(dragging ? ui.dropActive : {}),
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={onDrop}
+                onClick={() =>
+                  document.getElementById("projectZipInput")?.click()
+                }
+              >
+                <div style={ui.dropIcon}>⬆️</div>
+                <p style={ui.dropTitle}>Kéo & thả tệp mã nguồn vào đây</p>
+                <p style={ui.dropHint}>Hoặc nhấn để chọn tệp thủ công (.zip)</p>
+
+                <input
+                  id="projectZipInput"
+                  type="file"
+                  accept=".zip"
+                  hidden
+                  onChange={(e) => handleFileChange(e.target.files?.[0])}
+                />
+
+                {file && (
+                  <div style={ui.fileInfo}>
+                    Đã chọn: <strong>{file.name}</strong>
+                  </div>
+                )}
+
+                <div style={ui.dropNote}>
+                  Dung lượng tối đa: 50MB · Chỉ nhận định dạng .zip
                 </div>
-              )}
-              <div style={{ marginTop: 8, fontSize: 12, color: "#64748b" }}>
-                Dung lượng tối đa: 50MB, chỉ nhận định dạng .zip
               </div>
-            </div>
+
+              {/* ===== HƯỚNG DẪN ===== */}
+              <div style={ui.infoBox}>
+                <div style={ui.infoTitle}>ℹ️ Hướng dẫn cấu trúc file .zip</div>
+                <pre style={ui.zipTree}>{ZIP_STRUCTURE}</pre>
+                <ul style={ui.noteList}>
+                  <li>Chỉ nén mã nguồn của dự án</li>
+                  <li>Không nén node_modules, dist, build</li>
+                  <li>Không nén nhiều lớp thư mục lồng nhau</li>
+                  <li>Dung lượng tối đa cho mỗi dự án là 50MB</li>
+                </ul>
+              </div>
+            </>
           )}
 
           {error && <div style={ui.error}>{error}</div>}
 
           <div style={ui.actionRow}>
-            <button type="button" style={ui.secondaryBtn} onClick={resetForm} disabled={loading}>
+            <button
+              type="button"
+              style={ui.secondaryBtn}
+              onClick={resetForm}
+              disabled={loading}
+            >
               Hủy
             </button>
             <button type="submit" style={ui.primaryBtn} disabled={loading}>
@@ -229,145 +245,132 @@ export default function UploadPage() {
             </button>
           </div>
         </form>
-
-        {/* Preview / help panel */}
-        <aside style={ui.sideCard}>
-          <div style={ui.sideIcon}>⬆️</div>
-          <p style={{ fontWeight: 700, margin: "8px 0" }}>Kéo & thả tệp mã nguồn vào đây</p>
-          <p style={ui.sideText}>Hoặc nhấn để chọn tệp thủ công (.zip)</p>
-          <p style={ui.sideText}>Dung lượng tối đa: 50MB, chỉ nhận định dạng .zip</p>
-        </aside>
       </div>
     </div>
   );
 }
 
+/* ================= STYLE ================= */
 const ui = {
-  page: {
-    padding: 24,
-    background: "#f8fafc",
-    minHeight: "100vh"
-  },
-  breadcrumb: {
-    fontSize: 14,
-    color: "#475569",
-    marginBottom: 12
-  },
-  layout: {
-    display: "grid",
-    gridTemplateColumns: "2fr 1fr",
-    gap: 24,
-    alignItems: "start"
-  },
-  formCard: {
-    background: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
-    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)"
-  },
-  sideCard: {
-    background: "#ffffff",
-    borderRadius: 16,
-    padding: 20,
-    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-    textAlign: "center",
-    minHeight: 260,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    gap: 6
-  },
-  heading: {
-    fontSize: 20,
+  page: { display: "flex", flexDirection: "column", gap: 16 },
+
+  headerRow: { padding: "12px 0" },
+  overline: {
+    margin: 0,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: "#94a3b8",
     fontWeight: 700,
-    margin: 0
   },
-  subheading: {
-    margin: "6px 0 18px",
+  title: { margin: "4px 0", fontSize: 24, fontWeight: 800 },
+  subtitle: { margin: 0, fontSize: 14, color: "#475569" },
+
+  card: {
+    background: "#fff",
+    borderRadius: 12,
+    padding: 24,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
+    maxWidth: 900,
+    margin: "0 auto",
+    width: "100%",
+  },
+
+  sectionDivider: {
+    margin: "18px 0 12px",
+    borderBottom: "1px solid #e2e8f0",
+    paddingBottom: 6,
+    fontSize: 13,
+    fontWeight: 700,
     color: "#475569",
-    fontSize: 14
   },
-  field: {
-    marginBottom: 14
-  },
-  label: {
-    display: "block",
-    marginBottom: 6,
-    fontWeight: 600,
-    color: "#0f172a",
-    fontSize: 14
-  },
+
+  field: { marginBottom: 14 },
+  label: { marginBottom: 6, fontWeight: 600, display: "block" },
   input: {
     width: "100%",
     padding: "10px 12px",
     borderRadius: 10,
     border: "1px solid #e2e8f0",
     background: "#f8fafc",
-    fontSize: 14
   },
-  toggleRow: {
-    display: "flex",
-    gap: 10
-  },
+
+  toggleRow: { display: "flex", gap: 10 },
   toggleBtn: {
     flex: 1,
-    padding: "10px 12px",
+    padding: "10px",
     borderRadius: 10,
     border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    fontWeight: 600,
     cursor: "pointer",
-    fontWeight: 600
   },
+  toggleActive: {
+    background: "#e0e7ff",
+    borderColor: "#c7d2fe",
+    color: "#1d4ed8",
+  },
+
   dropzone: {
     border: "2px dashed #e2e8f0",
     borderRadius: 14,
     padding: 20,
     textAlign: "center",
     cursor: "pointer",
-    transition: "all 0.2s ease"
   },
-  actionRow: {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 16
-  },
-  primaryBtn: {
-    background: "#2563eb",
-    color: "white",
-    border: "none",
-    padding: "10px 18px",
-    borderRadius: 10,
-    fontWeight: 700,
-    cursor: "pointer",
-    minWidth: 150
-  },
-  secondaryBtn: {
-    background: "#f1f5f9",
-    color: "#0f172a",
+  dropActive: { background: "#f1f5ff", borderColor: "#2563eb" },
+  dropIcon: { fontSize: 28 },
+  dropTitle: { margin: "6px 0", fontWeight: 600 },
+  dropHint: { fontSize: 13, color: "#475569" },
+  dropNote: { fontSize: 12, color: "#64748b" },
+  fileInfo: { marginTop: 10, fontSize: 13 },
+
+  infoBox: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 12,
     border: "1px solid #e2e8f0",
-    padding: "10px 18px",
-    borderRadius: 10,
-    fontWeight: 600,
-    cursor: "pointer"
+    background: "#f8fafc",
   },
+  infoTitle: { fontWeight: 700, marginBottom: 8 },
+
+  zipTree: {
+    background: "#ffffff",
+    border: "1px dashed #cbd5f5",
+    borderRadius: 8,
+    padding: "12px 14px",
+    fontSize: 13,
+    lineHeight: 1.6,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    overflowX: "hidden",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+  },
+
+  noteList: { paddingLeft: 18, fontSize: 13, color: "#475569" },
+
   error: {
     background: "#fef2f2",
     color: "#b91c1c",
     padding: "10px 12px",
     borderRadius: 10,
-    marginTop: 8
+    marginTop: 8,
   },
-  helper: {
-    marginTop: 6,
-    color: "#475569",
-    fontSize: 13
+
+  actionRow: { display: "flex", justifyContent: "flex-end", gap: 10 },
+  primaryBtn: {
+    background: "#2563eb",
+    color: "#fff",
+    padding: "10px 18px",
+    borderRadius: 10,
+    border: "none",
+    fontWeight: 700,
   },
-  sideIcon: {
-    fontSize: 32
+  secondaryBtn: {
+    background: "#f1f5f9",
+    border: "1px solid #e2e8f0",
+    padding: "10px 18px",
+    borderRadius: 10,
+    fontWeight: 600,
   },
-  sideText: {
-    margin: 0,
-    color: "#475569",
-    fontSize: 13
-  }
 };

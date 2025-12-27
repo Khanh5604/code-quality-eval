@@ -7,40 +7,38 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
-  const nav = useNavigate();
+  const navigate = useNavigate();
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
     setLoading(false);
 
-    if (error) return setErr(error.message);
-    nav("/");
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+
+    navigate("/");
   };
 
   return (
     <div style={ui.page}>
-      <div style={ui.panelLeft}>
-        <div style={ui.logoRow}>
-          <div style={ui.logoIcon}>{"</>"}</div>
+      <div style={ui.card}>
+        <h1 style={ui.title}>CodeAnalyzer</h1>
+        <p style={ui.subtitle}>
+          Hệ thống đánh giá chất lượng mã nguồn
+        </p>
+
+        <form style={ui.form} onSubmit={onSubmit}>
           <div>
-            <div style={ui.logoTitle}>CodeReviewAI</div>
-            <div style={ui.logoSub}>Hệ thống đánh giá mã tự động</div>
-          </div>
-        </div>
-        <p style={ui.lead}>Hỗ trợ sinh viên và lập trình viên cải thiện chất lượng mã nguồn.</p>
-        <div style={ui.illustration}>👩‍💻👨‍💻</div>
-      </div>
-
-      <div style={ui.panelRight}>
-        <div style={ui.card}>
-          <h2 style={ui.title}>Đăng nhập</h2>
-          <p style={ui.subtitle}>Chào mừng bạn quay trở lại!</p>
-
-          <form style={ui.form} onSubmit={onSubmit}>
             <label style={ui.label}>Email</label>
             <input
               style={ui.input}
@@ -50,7 +48,9 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+          </div>
 
+          <div>
             <label style={ui.label}>Mật khẩu</label>
             <input
               style={ui.input}
@@ -60,23 +60,20 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-
-            {err && <div style={ui.error}>{err}</div>}
-
-            <button style={ui.primaryBtn} type="submit" disabled={loading}>
-              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-            </button>
-
-            <div style={ui.divider}>Hoặc</div>
-
-            <button style={ui.googleBtn} type="button" onClick={() => setErr("Vui lòng dùng tài khoản thường.")}> 
-              <span style={{ marginRight: 8 }}>🔒</span> Đăng nhập với Google
-            </button>
-          </form>
-
-          <div style={ui.footerText}>
-            Chưa có tài khoản? <Link to="/signup" style={ui.link}>Đăng ký ngay</Link>
           </div>
+
+          {err && <div style={ui.error}>{err}</div>}
+
+          <button style={ui.button} disabled={loading}>
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
+        </form>
+
+        <div style={ui.footer}>
+          Chưa có tài khoản?{" "}
+          <Link to="/signup" style={ui.link}>
+            Đăng ký
+          </Link>
         </div>
       </div>
     </div>
@@ -85,139 +82,86 @@ export default function LoginPage() {
 
 const ui = {
   page: {
-    display: "grid",
-    gridTemplateColumns: "1.2fr 1fr",
     minHeight: "100vh",
-    background: "#eef2ff"
-  },
-  panelLeft: {
-    background: "linear-gradient(135deg, #1d4ed8, #2563eb)",
-    color: "#fff",
-    padding: "40px 48px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    justifyContent: "center"
-  },
-  logoRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12
-  },
-  logoIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    background: "rgba(255,255,255,0.18)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: 800,
-    border: "1px solid rgba(255,255,255,0.2)"
+    background: "#f1f5f9",
   },
-  logoTitle: {
-    fontSize: 20,
-    fontWeight: 800,
-    margin: 0
-  },
-  logoSub: {
-    margin: 0,
-    opacity: 0.9
-  },
-  lead: {
-    margin: "12px 0 0",
-    fontSize: 15,
-    lineHeight: 1.6
-  },
-  illustration: {
-    marginTop: 24,
-    fontSize: 48,
-    textAlign: "center"
-  },
-  panelRight: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "32px 24px"
-  },
+
   card: {
     width: "100%",
-    maxWidth: 420,
-    background: "#fff",
-    borderRadius: 12,
+    maxWidth: 380,
+    background: "#ffffff",
     padding: 28,
-    boxShadow: "0 18px 40px rgba(15,23,42,0.12)"
+    borderRadius: 10,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
   },
+
   title: {
-    margin: "0 0 4px",
-    fontSize: 22,
+    margin: 0,
+    textAlign: "center",
+    fontSize: 24,
     fontWeight: 800,
-    color: "#0f172a"
+    color: "#0f172a",
   },
+
   subtitle: {
-    margin: "0 0 20px",
-    color: "#475569",
-    fontSize: 14
+    margin: "8px 0 22px",
+    textAlign: "center",
+    fontSize: 14,
+    color: "#64748b",
   },
+
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: 10
+    gap: 14,
   },
+
   label: {
-    fontWeight: 600,
+    display: "block",
+    marginBottom: 4,
     fontSize: 13,
-    color: "#0f172a"
+    fontWeight: 600,
+    color: "#0f172a",
   },
+
   input: {
     width: "100%",
     padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #e2e8f0",
-    background: "#f8fafc",
+    fontSize: 14,
+    borderRadius: 8,
+    border: "1px solid #cbd5f5",
     outline: "none",
-    fontSize: 14
   },
-  error: {
-    color: "#b91c1c",
-    fontSize: 13
-  },
-  primaryBtn: {
-    marginTop: 4,
-    padding: "12px 14px",
-    borderRadius: 10,
+
+  button: {
+    marginTop: 6,
+    padding: "12px",
+    borderRadius: 8,
     border: "none",
     background: "#2563eb",
-    color: "#fff",
+    color: "#ffffff",
     fontWeight: 700,
-    cursor: "pointer"
-  },
-  divider: {
-    textAlign: "center",
-    color: "#94a3b8",
-    fontSize: 13,
-    margin: "6px 0"
-  },
-  googleBtn: {
-    padding: "12px 14px",
-    borderRadius: 10,
-    border: "1px solid #e2e8f0",
-    background: "#fff",
     cursor: "pointer",
-    fontWeight: 700,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#0f172a"
   },
-  footerText: {
-    marginTop: 12,
+
+  error: {
+    fontSize: 13,
+    color: "#dc2626",
+  },
+
+  footer: {
+    marginTop: 18,
     textAlign: "center",
-    color: "#475569"
+    fontSize: 14,
+    color: "#475569",
   },
+
   link: {
     color: "#2563eb",
     fontWeight: 700,
-    textDecoration: "none"
-  }
+    textDecoration: "none",
+  },
 };

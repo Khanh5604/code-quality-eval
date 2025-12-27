@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 const navItems = [
-  { label: "Thêm dự án", to: "/", primary: true },
+  { label: "Thêm dự án", to: "/" },
   { label: "Tổng quan", to: "/dashboard" },
   { label: "Dự án", to: "/history" },
   { label: "So sánh", to: "/compare" },
@@ -14,40 +14,77 @@ export default function Layout({ children }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia
+      ? window.matchMedia("(max-width: 900px)").matches
+      : false
+  );
   const [user, setUser] = useState(null);
+  const menuRef = useRef(null);
+  const sidebarRef = useRef(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user || null);
     });
     return () => sub?.subscription?.unsubscribe();
   }, []);
 
+  // Detect mobile viewport
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const handle = (e) => setIsMobile(e.matches);
+    handle(mq);
+    mq.addEventListener("change", handle);
+    return () => mq.removeEventListener("change", handle);
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setSidebarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close sidebar on route change for mobile
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [pathname, isMobile]);
+
   const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (_err) {
-      // best-effort sign-out
-    }
-    setUser(null);
+    await supabase.auth.signOut();
     setMenuOpen(false);
     navigate("/login", { replace: true });
   };
 
-  const displayName = user?.user_metadata?.full_name?.trim() || user?.email || "Guest";
+  const displayName =
+    user?.user_metadata?.full_name?.trim() || user?.email || "Guest";
   const initial = displayName.charAt(0)?.toUpperCase() || "?";
 
   return (
-    <div className="app-shell" style={ui.app}>
+    <div style={ui.app}>
       {/* Sidebar */}
-      <aside className="layout-sidebar" style={ui.sidebar}>
+      <aside
+        ref={sidebarRef}
+        className="layout-sidebar"
+        style={{
+          ...ui.sidebar,
+          ...(isMobile ? ui.sidebarMobile : {}),
+          ...(isMobile && sidebarOpen ? ui.sidebarMobileOpen : {}),
+        }}
+      >
         <div style={ui.brand}>
           <div style={ui.logo}>{"</>"}</div>
-          <div>
-            <div style={ui.brandName}>CodeAnalyzer</div>
-            <div style={ui.brandSub}>AI Platform</div>
-          </div>
+          <div style={ui.brandName}>CodeAnalyzer</div>
         </div>
 
         <nav style={ui.nav}>
@@ -59,8 +96,22 @@ export default function Layout({ children }) {
                 to={item.to}
                 style={{
                   ...ui.navItem,
-                  ...(item.primary ? ui.primaryNav : {}),
-                  ...(active ? ui.navActive : {})
+                  ...(active ? ui.navActive : {}),
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = ui.navHover.background;
+                    e.currentTarget.style.color = ui.navHover.color;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "#374151";
+                  }
+                }}
+                onClick={() => {
+                  if (isMobile) setSidebarOpen(false);
                 }}
               >
                 {item.label}
@@ -71,52 +122,98 @@ export default function Layout({ children }) {
       </aside>
 
       {/* Content */}
-      <div className="layout-content" style={ui.content}>
+      <div style={ui.content}>
         {/* Topbar */}
-        <header className="layout-topbar" style={ui.topbar}>
-          <div />
-          <div style={ui.user}>
+        <header style={ui.topbar}>
+          <div style={ui.topbarLeft}>
+            {isMobile && (
+              <button
+                type="button"
+                style={ui.menuBtn}
+                onClick={() => setSidebarOpen((v) => !v)}
+              >
+                ☰
+              </button>
+            )}
+          </div>
+          <div style={ui.user} ref={menuRef}>
             <div style={ui.userName}>{displayName}</div>
-            <div style={ui.avatar} onClick={() => setMenuOpen(!menuOpen)}>{initial}</div>
+            <div
+              style={ui.avatar}
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              {initial}
+            </div>
+
             {menuOpen && (
               <div style={ui.userMenu}>
-                <div style={ui.userMenuSection}>
+                <div style={ui.userMenuHeader}>
                   <div style={ui.userNameStrong}>{displayName}</div>
-                  <div style={ui.userEmail}>{user?.email || ""}</div>
+                  <div style={ui.userEmail}>{user?.email}</div>
                 </div>
-                <button style={ui.logoutBtn} type="button" onClick={handleLogout}>Đăng xuất</button>
+
+                <button
+                  style={ui.logoutBtn}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#fee2e2")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "#f8fafc")
+                  }
+                  onClick={handleLogout}
+                >
+                  Đăng xuất
+                </button>
               </div>
             )}
           </div>
         </header>
 
-        <main className="layout-main" style={ui.main}>{children}</main>
+        <main style={ui.main}>{children}</main>
       </div>
+
+      {isMobile && sidebarOpen && (
+        <div style={ui.backdrop} onClick={() => setSidebarOpen(false)} />
+      )}
     </div>
   );
 }
-
 const ui = {
   app: {
     display: "flex",
     height: "100vh",
-    overflow: "hidden",
     background: "#f8fafc",
-    fontFamily: "'Inter', system-ui, sans-serif"
+    fontFamily: "'Inter', system-ui, sans-serif",
   },
 
   sidebar: {
     width: 240,
     background: "#ffffff",
     borderRight: "1px solid #e5e7eb",
-    padding: 16
+    padding: 16,
+    transition: "transform 0.2s ease",
+    zIndex: 20,
+  },
+
+  sidebarMobile: {
+    position: "fixed",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    transform: "translateX(-110%)",
+    boxShadow: "0 10px 30px rgba(15,23,42,0.12)",
+    background: "#ffffff",
+  },
+
+  sidebarMobileOpen: {
+    transform: "translateX(0)",
   },
 
   brand: {
     display: "flex",
     gap: 10,
     alignItems: "center",
-    marginBottom: 24
+    marginBottom: 24,
   },
 
   logo: {
@@ -128,22 +225,18 @@ const ui = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: 700
+    fontWeight: 700,
   },
 
   brandName: {
-    fontWeight: 700
-  },
-
-  brandSub: {
-    fontSize: 12,
-    color: "#6b7280"
+    fontWeight: 700,
+    color: "#0f172a",
   },
 
   nav: {
     display: "flex",
     flexDirection: "column",
-    gap: 6
+    gap: 6,
   },
 
   navItem: {
@@ -151,26 +244,25 @@ const ui = {
     borderRadius: 8,
     textDecoration: "none",
     color: "#374151",
-    fontWeight: 500
+    fontWeight: 500,
+    transition: "background 0.15s ease, color 0.15s ease",
+  },
+
+  navHover: {
+    background: "#e0e7ff",
+    color: "#1d4ed8",
   },
 
   navActive: {
     background: "#e0e7ff",
-    color: "#1d4ed8"
-  },
-
-  primaryNav: {
-    background: "#2563eb",
-    color: "#fff",
-    fontWeight: 600
+    color: "#1d4ed8",
+    fontWeight: 600,
   },
 
   content: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    height: "100%",
-    overflow: "hidden"
   },
 
   topbar: {
@@ -180,20 +272,35 @@ const ui = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "0 20px"
+    padding: "0 20px",
+  },
+
+  topbarLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  menuBtn: {
+    border: "1px solid #e5e7eb",
+    background: "#ffffff",
+    borderRadius: 8,
+    padding: "8px 10px",
+    cursor: "pointer",
+    fontSize: 16,
   },
 
   user: {
     display: "flex",
     alignItems: "center",
     gap: 12,
-    position: "relative"
+    position: "relative",
   },
 
   userName: {
     fontSize: 14,
+    fontWeight: 600,
     color: "#0f172a",
-    fontWeight: 600
   },
 
   avatar: {
@@ -206,7 +313,7 @@ const ui = {
     alignItems: "center",
     justifyContent: "center",
     fontWeight: 700,
-    cursor: "pointer"
+    cursor: "pointer",
   },
 
   userMenu: {
@@ -216,39 +323,51 @@ const ui = {
     background: "#ffffff",
     border: "1px solid #e5e7eb",
     borderRadius: 10,
-    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",
-    minWidth: 200,
+    boxShadow: "0 10px 30px rgba(15,23,42,0.12)",
+    minWidth: 220,
     padding: 12,
-    zIndex: 10
+    zIndex: 10,
   },
-  userMenuSection: {
-    marginBottom: 10,
+
+  userMenuHeader: {
     borderBottom: "1px solid #e5e7eb",
-    paddingBottom: 8
+    paddingBottom: 8,
+    marginBottom: 10,
   },
+
   userNameStrong: {
     fontWeight: 700,
     fontSize: 14,
-    color: "#0f172a"
+    color: "#0f172a",
   },
+
   userEmail: {
     fontSize: 12,
-    color: "#6b7280"
+    color: "#6b7280",
   },
+
   logoutBtn: {
     width: "100%",
     padding: "8px 10px",
     borderRadius: 8,
     border: "1px solid #e5e7eb",
     background: "#f8fafc",
-    cursor: "pointer",
     fontWeight: 600,
-    color: "#b91c1c"
+    color: "#b91c1c",
+    cursor: "pointer",
+    transition: "background 0.15s ease",
   },
 
   main: {
-    padding: 24,
     flex: 1,
-    overflowY: "auto"
-  }
+    padding: 24,
+    overflowY: "auto",
+  },
+
+  backdrop: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15,23,42,0.35)",
+    zIndex: 10,
+  },
 };
