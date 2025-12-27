@@ -6,12 +6,10 @@ import { api } from "../api/client";
 const ZIP_STRUCTURE = `
 project-name.zip
 |- src/
-|  |- index.js
-|  |- app.js
+|  |- (mã nguồn chính của dự án)
 |  |- ...
-|- package.json
 |- README.md
-|- tsconfig.json (neu co)
+|- (tệp cấu hình theo ngôn ngữ)
 `.trim();
 
 const languages = [
@@ -95,7 +93,7 @@ export default function UploadPage() {
 
   return (
     <div style={ui.page}>
-      {/* ===== HEADER NGOÀI (GIỐNG HISTORY) ===== */}
+      {/* ===== HEADER ===== */}
       <div style={ui.headerRow}>
         <p style={ui.overline}>PHÂN TÍCH</p>
         <h1 style={ui.title}>Thêm dự án mới</h1>
@@ -107,7 +105,7 @@ export default function UploadPage() {
       {/* ===== CARD ===== */}
       <div style={ui.card}>
         <form onSubmit={handleSubmit}>
-          {/* ===== SECTION: THÔNG TIN DỰ ÁN ===== */}
+          {/* ===== THÔNG TIN DỰ ÁN ===== */}
           <div style={ui.sectionDivider}>Thông tin dự án</div>
 
           <div style={ui.field}>
@@ -146,7 +144,7 @@ export default function UploadPage() {
             </select>
           </div>
 
-          {/* ===== SECTION: MÃ NGUỒN ===== */}
+          {/* ===== MÃ NGUỒN ===== */}
           <div style={ui.sectionDivider}>Mã nguồn</div>
 
           <div style={ui.field}>
@@ -157,11 +155,7 @@ export default function UploadPage() {
                 onClick={() => setUploadMethod("file")}
                 style={{
                   ...ui.toggleBtn,
-                  background:
-                    uploadMethod === "file" ? "#e0e7ff" : "#f8fafc",
-                  color: uploadMethod === "file" ? "#1d4ed8" : "#0f172a",
-                  borderColor:
-                    uploadMethod === "file" ? "#c7d2fe" : "#e2e8f0",
+                  ...(uploadMethod === "file" ? ui.toggleActive : {}),
                 }}
               >
                 Tải file .zip
@@ -171,25 +165,24 @@ export default function UploadPage() {
                 onClick={() => setUploadMethod("link")}
                 style={{
                   ...ui.toggleBtn,
-                  background:
-                    uploadMethod === "link" ? "#e0e7ff" : "#f8fafc",
-                  color: uploadMethod === "link" ? "#1d4ed8" : "#0f172a",
-                  borderColor:
-                    uploadMethod === "link" ? "#c7d2fe" : "#e2e8f0",
+                  ...(uploadMethod === "link" ? ui.toggleActive : {}),
                 }}
               >
                 Dán link GitHub/GitLab
               </button>
             </div>
+
             {uploadMethod === "link" && (
               <div style={ui.warning}>
-                Chưa hỗ trợ phân tích trực tiếp từ link GitHub/GitLab. Vui lòng tải file .zip để tiếp tục.
+                Chưa hỗ trợ phân tích trực tiếp từ link GitHub/GitLab. Vui lòng
+                tải file .zip để tiếp tục.
               </div>
             )}
           </div>
 
           {uploadMethod === "file" && (
             <>
+              {/* ===== DROPZONE ===== */}
               <div
                 style={{
                   ...ui.dropzone,
@@ -230,8 +223,48 @@ export default function UploadPage() {
 
               {/* ===== HƯỚNG DẪN ===== */}
               <div style={ui.infoBox}>
-                <div style={ui.infoTitle}>ℹ️ Hướng dẫn cấu trúc file .zip</div>
+                <div style={ui.infoTitle}>
+                  ℹ️ Hướng dẫn cấu trúc file .zip
+                </div>
+
                 <pre style={ui.zipTree}>{ZIP_STRUCTURE}</pre>
+
+                {/* ===== VÍ DỤ THEO NGÔN NGỮ ===== */}
+                <div style={ui.langExample}>
+                  <strong>Ví dụ theo ngôn ngữ:</strong>
+
+                  <div style={ui.langItem}>
+                    <b>JavaScript / TypeScript</b>
+                    <div>
+                      <code>src/index.js</code>
+                    </div>
+                    <div>
+                      <code>package.json</code>, <code>tsconfig.json</code>
+                    </div>
+                  </div>
+
+                  <div style={ui.langItem}>
+                    <b>Python</b>
+                    <div>
+                      <code>src/main.py</code>
+                    </div>
+                    <div>
+                      <code>requirements.txt</code>
+                    </div>
+                  </div>
+
+                  <div style={ui.langItem}>
+                    <b>Java</b>
+                    <div>
+                      <code>src/main/java/...</code>
+                    </div>
+                    <div>
+                      <code>pom.xml</code> hoặc <code>build.gradle</code>
+                    </div>
+                  </div>
+                </div>
+
+
                 <ul style={ui.noteList}>
                   <li>Chỉ nén mã nguồn của dự án</li>
                   <li>Không nén node_modules, dist, build</li>
@@ -313,9 +346,7 @@ const ui = {
     flex: 1,
     padding: "10px",
     borderRadius: 10,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#e2e8f0",
+    border: "1px solid #e2e8f0",
     background: "#f8fafc",
     fontWeight: 600,
     cursor: "pointer",
@@ -357,10 +388,22 @@ const ui = {
     fontSize: 13,
     lineHeight: 1.6,
     whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-    overflowX: "hidden",
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
   },
+  
+
+  langExample: {
+    marginTop: 10,
+    fontSize: 13,
+    color: "#475569",
+    lineHeight: 1.6,
+  },
+  langItem: {
+  marginTop: 8,
+  paddingLeft: 8,
+  lineHeight: 1.6,
+  },
+  
 
   noteList: { paddingLeft: 18, fontSize: 13, color: "#475569" },
 
@@ -380,7 +423,6 @@ const ui = {
     border: "1px solid #fed7aa",
     color: "#c2410c",
     fontSize: 13,
-    lineHeight: 1.5,
   },
 
   actionRow: { display: "flex", justifyContent: "flex-end", gap: 10 },
