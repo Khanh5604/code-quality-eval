@@ -1,14 +1,14 @@
 // tools/suggestionMapper.js
 
 const eslintSuggestions = {
-  "no-unused-vars": "Xoa bien khong su dung hoac su dung dung muc dich (Remove unused variable).",
-  "no-console": "Loai bo console.log hoac thay bang logger phu hop (Avoid console in production).",
-  eqeqeq: "Dung '===' thay cho '==' de tranh so sanh long (Use strict equality).",
-  "no-var": "Thay var bang let/const de tranh hoisting khong mong muon (Use let/const).",
-  "prefer-const": "Dung const cho bien khong thay doi (Prefer const for immutable bindings).",
-  "no-shadow": "Doi ten bien de tranh trung pham vi (Avoid shadowed variables).",
-  "no-undef": "Khai bao bien truoc khi su dung (Declare variables before use).",
-  "no-debugger": "Xoa debugger truoc khi commit/deploy (Remove debugger statement)."
+  "no-unused-vars": "Xóa biến không sử dụng hoặc sử dụng đúng mục đích (Remove unused variable).",
+  "no-console": "Loại bỏ console.log hoặc thay bằng logger phù hợp (Avoid console in production).",
+  eqeqeq: "Dùng '===' thay cho '==' để tránh so sánh lỏng (Use strict equality).",
+  "no-var": "Thay var bằng let/const để tránh hoisting không mong muốn (Use let/const).",
+  "prefer-const": "Dùng const cho biến không thay đổi (Prefer const for immutable bindings).",
+  "no-shadow": "Đổi tên biến để tránh trùng phạm vi (Avoid shadowed variables).",
+  "no-undef": "Khai báo biến trước khi sử dụng (Declare variables before use).",
+  "no-debugger": "Xóa debugger trước khi commit/deploy (Remove debugger statement)."
 };
 
 /**
@@ -22,7 +22,7 @@ function suggestionForEslint(message) {
   // Give localized guidance first so UI is always bilingual.
   if (ruleId === "no-unused-vars") {
     const match = /'(.+?)' is assigned a value but never used/.exec(msg);
-    if (match) return `Xoa bien '${match[1]}' khong su dung (Remove unused variable).`;
+    if (match) return `Xóa biến '${match[1]}' không sử dụng (Remove unused variable).`;
   }
 
   if (eslintSuggestions[ruleId]) return eslintSuggestions[ruleId];
@@ -40,12 +40,12 @@ function suggestionForEslint(message) {
  * issue: { rule: 'F401' | 'F841' | ..., message: string }
  */
 const ruffSuggestions = {
-  F401: "Xoa import khong can thiet (Remove unused import).",
-  E501: "Chia nho dong code de de doc va bao tri (Split long line).",
-  C901: "Tach ham thanh cac ham nho hon (Refactor complex function).",
-  B006: "Tranh dung mutable lam gia tri mac dinh (Avoid mutable default).",
-  W293: "Xoa khoang trang du trong dong trong (Trim trailing whitespace).",
-  F841: "Xoa bien khong su dung hoac su dung dung muc dich (Remove unused variable)."
+  F401: "Xóa import không cần thiết (Remove unused import).",
+  E501: "Chia nhỏ dòng code để dễ đọc và bảo trì (Split long line).",
+  C901: "Tách hàm thành các hàm nhỏ hơn (Refactor complex function).",
+  B006: "Tránh dùng mutable làm giá trị mặc định (Avoid mutable default).",
+  W293: "Xóa khoảng trắng dư trong dòng trống (Trim trailing whitespace).",
+  F841: "Xóa biến không sử dụng hoặc sử dụng đúng mục đích (Remove unused variable)."
 };
 
 function suggestionForRuff(issue) {
@@ -54,23 +54,23 @@ function suggestionForRuff(issue) {
 
   if (rule === "F401") {
     const match = /`(.+?)` imported but unused/.exec(msg);
-    if (match) return `Xoa import '${match[1]}' neu khong dung.`;
+    if (match) return `Xóa import '${match[1]}' nếu không dùng.`;
   }
 
   if (rule === "F841") {
     const match = /'(.+?)' is assigned to but never used/.exec(msg);
-    if (match) return `Xoa bien '${match[1]}' neu khong dung.`;
+    if (match) return `Xóa biến '${match[1]}' nếu không dùng.`;
   }
 
   return ruffSuggestions[rule] || null;
 }
 
 const pmdSuggestions = {
-  UnusedLocalVariable: "Xoa bien khong su dung hoac su dung dung muc dich (Remove unused local).",
-  AvoidDuplicateLiterals: "Dua literal dung chung thanh hang so (Extract constant).",
-  CyclomaticComplexity: "Chia nho phuong thuc de giam do phuc tap (Split complex method).",
-  EmptyCatchBlock: "Them xu ly hoac log loi trong catch (Handle or log exception).",
-  GodClass: "Tach lop thanh cac lop nho hon theo trach nhiem (Break down god class)."
+  UnusedLocalVariable: "Xóa biến không sử dụng hoặc sử dụng đúng mục đích (Remove unused local).",
+  AvoidDuplicateLiterals: "Đưa literal dùng chung thành hằng số (Extract constant).",
+  CyclomaticComplexity: "Chia nhỏ phương thức để giảm độ phức tạp (Split complex method).",
+  EmptyCatchBlock: "Thêm xử lý hoặc log lỗi trong catch (Handle or log exception).",
+  GodClass: "Tách lớp thành các lớp nhỏ hơn theo trách nhiệm (Break down god class)."
 };
 
 function suggestionForPmd(rule) {

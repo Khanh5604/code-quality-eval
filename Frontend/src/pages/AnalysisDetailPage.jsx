@@ -226,8 +226,8 @@ export default function AnalysisDetailPage() {
 ========================= */
 const Metric = ({ label, value }) => (
   <div style={ui.metric}>
-    <span>{label}</span>
-    <strong>{value}</strong>
+    <span style={ui.metricLabel}>{label}</span>
+    <strong style={ui.metricValue}>{value}</strong>
   </div>
 );
 
@@ -283,9 +283,10 @@ const ui = {
   },
   metricsRow: {
     display: "grid",
-    gridTemplateColumns: "repeat(6, 1fr)",
-    gap: 16,
-    marginBottom: 24
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: 14,
+    marginBottom: 24,
+    alignItems: "stretch"
   },
   card: {
     background: "white",
@@ -302,8 +303,26 @@ const ui = {
     background: "white",
     borderRadius: 14,
     padding: 14,
-    textAlign: "center",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.05)"
+    textAlign: "left",
+    boxShadow: "0 8px 20px rgba(15,23,42,0.08)",
+    border: "1px solid #e5e7eb",
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    minHeight: 96
+  },
+
+  metricLabel: {
+    color: "#475569",
+    fontSize: 13,
+    lineHeight: 1.4
+  },
+
+  metricValue: {
+    color: "#0f172a",
+    fontSize: 18,
+    fontWeight: 800,
+    lineHeight: 1.2
   },
   toolStat: {
     display: "flex",

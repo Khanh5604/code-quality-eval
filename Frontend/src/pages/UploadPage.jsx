@@ -157,7 +157,11 @@ export default function UploadPage() {
                 onClick={() => setUploadMethod("file")}
                 style={{
                   ...ui.toggleBtn,
-                  ...(uploadMethod === "file" ? ui.toggleActive : {}),
+                  background:
+                    uploadMethod === "file" ? "#e0e7ff" : "#f8fafc",
+                  color: uploadMethod === "file" ? "#1d4ed8" : "#0f172a",
+                  borderColor:
+                    uploadMethod === "file" ? "#c7d2fe" : "#e2e8f0",
                 }}
               >
                 Tải file .zip
@@ -167,12 +171,21 @@ export default function UploadPage() {
                 onClick={() => setUploadMethod("link")}
                 style={{
                   ...ui.toggleBtn,
-                  ...(uploadMethod === "link" ? ui.toggleActive : {}),
+                  background:
+                    uploadMethod === "link" ? "#e0e7ff" : "#f8fafc",
+                  color: uploadMethod === "link" ? "#1d4ed8" : "#0f172a",
+                  borderColor:
+                    uploadMethod === "link" ? "#c7d2fe" : "#e2e8f0",
                 }}
               >
                 Dán link GitHub/GitLab
               </button>
             </div>
+            {uploadMethod === "link" && (
+              <div style={ui.warning}>
+                Chưa hỗ trợ phân tích trực tiếp từ link GitHub/GitLab. Vui lòng tải file .zip để tiếp tục.
+              </div>
+            )}
           </div>
 
           {uploadMethod === "file" && (
@@ -300,7 +313,9 @@ const ui = {
     flex: 1,
     padding: "10px",
     borderRadius: 10,
-    border: "1px solid #e2e8f0",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "#e2e8f0",
     background: "#f8fafc",
     fontWeight: 600,
     cursor: "pointer",
@@ -355,6 +370,17 @@ const ui = {
     padding: "10px 12px",
     borderRadius: 10,
     marginTop: 8,
+  },
+
+  warning: {
+    marginTop: 8,
+    padding: "10px 12px",
+    borderRadius: 10,
+    background: "#fff7ed",
+    border: "1px solid #fed7aa",
+    color: "#c2410c",
+    fontSize: 13,
+    lineHeight: 1.5,
   },
 
   actionRow: { display: "flex", justifyContent: "flex-end", gap: 10 },

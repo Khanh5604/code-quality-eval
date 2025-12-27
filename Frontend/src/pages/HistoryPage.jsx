@@ -1,206 +1,181 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/HistoryPage.jsx
+import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { Link } from "react-router-dom";
 
-const languages = [
-  { label: "Tự động nhận diện", value: "auto" },
-  { label: "JavaScript / TypeScript", value: "javascript" },
-  { label: "Python", value: "python" },
-  { label: "Java", value: "java" },
-];
+export default function HistoryPage() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-export default function UploadPage() {
-  const [projectName, setProjectName] = useState("");
-  const [description, setDescription] = useState("");
-  const [language, setLanguage] = useState("auto");
-  const [uploadMethod, setUploadMethod] = useState("file");
-  const [repoLink, setRepoLink] = useState("");
-  const [file, setFile] = useState(null);
-  const [dragging, setDragging] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    if (!file) {
-      setError("Vui lòng chọn file .zip để phân tích.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("projectZip", file);
-    formData.append("projectName", projectName);
-    if (description) formData.append("description", description);
-    if (language !== "auto") formData.append("language", language);
-
-    try {
-      setLoading(true);
-      const res = await api.post("/analyze", formData);
-      navigate(`/result/${res.data.id}`);
-    } catch (err) {
-      setError("Có lỗi xảy ra khi phân tích.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    api
+      .get("/analyses")
+      .then((res) => setItems(res.data || []))
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div style={ui.page}>
-      {/* ===== HEADER GIỐNG HISTORY ===== */}
       <div style={ui.headerRow}>
         <div>
-          <p style={ui.overline}>PHÂN TÍCH</p>
-          <h1 style={ui.title}>Thêm dự án mới</h1>
-          <p style={ui.subtitle}>
-            Nhập thông tin và tải mã nguồn để hệ thống tiến hành phân tích tự động
-          </p>
+          <p style={ui.overline}>Lịch sử</p>
+          <h1 style={ui.title}>Các phiên phân tích đã chạy</h1>
+          <p style={ui.subtitle}>Xem lại điểm số, chất lượng và mở chi tiết báo cáo</p>
         </div>
       </div>
 
-      {/* ===== CARD GIỐNG HISTORY ===== */}
-      <div style={ui.card}>
-        <form onSubmit={handleSubmit}>
-          <div style={ui.field}>
-            <label style={ui.label}>Tên dự án *</label>
-            <input
-              style={ui.input}
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              required
-            />
-          </div>
+      {loading && <p style={ui.muted}>Đang tải...</p>}
+      {!loading && items.length === 0 && <p style={ui.muted}>Chưa có lần phân tích nào.</p>}
 
-          <div style={ui.field}>
-            <label style={ui.label}>Mô tả dự án</label>
-            <textarea
-              style={{ ...ui.input, minHeight: 90 }}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
+      {!loading && items.length > 0 && (
+        <div style={ui.card}>
+          <div style={ui.tableWrap}>
+            <table style={ui.table}>
+              <thead>
+                <tr>
+                  <th style={ui.th}>Tên dự án</th>
+                  <th style={ui.th}>Thời gian</th>
+                  <th style={ui.th}>Điểm</th>
+                  <th style={ui.th}>Chất lượng</th>
+                  <th style={ui.th}>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const scores = item.scores;
+                  return (
+                    <tr key={item.id} style={ui.tr}>
+                      <td style={ui.fileCell}>{item.projectName}</td>
+                      <td style={ui.timeCell}>{new Date(item.createdAt).toLocaleString()}</td>
+                      <td style={ui.scoreCell}>{scores?.summary?.overall ?? "-"}</td>
+                      <td style={ui.badgeCell}>
+                        <span style={{ ...ui.pill, background: qualityColor(scores?.summary?.quality_level) }}>
+                          {scores?.summary?.quality_level ?? "-"}
+                        </span>
+                      </td>
+                      <td style={ui.actions}>
+                        <Link to={`/result/${item.id}`} style={ui.link}>Kết quả</Link>
+                        <Link to={`/analysis/${item.id}`} style={ui.link}>Chi tiết</Link>
+                        <Link to={`/report/${item.id}`} style={ui.link}>Báo cáo</Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-
-          <div style={ui.field}>
-            <label style={ui.label}>Ngôn ngữ mã nguồn</label>
-            <select
-              style={ui.input}
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            >
-              {languages.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={ui.dropzone}>
-            <p style={{ fontWeight: 600 }}>Kéo & thả file .zip vào đây</p>
-            <input
-              type="file"
-              accept=".zip"
-              onChange={(e) => setFile(e.target.files?.[0])}
-            />
-            {file && <p>Đã chọn: <strong>{file.name}</strong></p>}
-          </div>
-
-          {error && <div style={ui.error}>{error}</div>}
-
-          <div style={ui.actions}>
-            <button type="submit" style={ui.primaryBtn} disabled={loading}>
-              {loading ? "Đang phân tích..." : "Bắt đầu phân tích"}
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
+
+function qualityColor(level) {
+  if (level === "A") return "#d1fae5";
+  if (level === "B") return "#e0f2fe";
+  if (level === "C") return "#fef9c3";
+  if (level === "D") return "#fee2e2";
+  return "#e2e8f0";
+}
+
 const ui = {
   page: {
     display: "flex",
     flexDirection: "column",
-    gap: 16,
+    gap: 16
   },
-
   headerRow: {
-    padding: "12px 0",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    padding: "12px 0"
   },
-
   overline: {
+    margin: 0,
     textTransform: "uppercase",
     letterSpacing: 1.2,
     fontSize: 11,
     color: "#94a3b8",
-    fontWeight: 700,
-    margin: 0,
+    fontWeight: 700
   },
-
   title: {
-    margin: "4px 0",
+    margin: "4px 0 4px",
     fontSize: 24,
     fontWeight: 800,
-    color: "#0f172a",
+    color: "#0f172a"
   },
-
   subtitle: {
     margin: 0,
     color: "#475569",
-    fontSize: 14,
+    fontSize: 14
   },
-
+  muted: {
+    color: "#64748b",
+    fontSize: 14
+  },
   card: {
     background: "#fff",
     borderRadius: 12,
-    padding: 24,
-    boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-    border: "1px solid #e2e8f0",
-    maxWidth: 1100,
-    margin: "0 auto",   // 👈 QUAN TRỌNG
+    padding: 12,
+    boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+    border: "1px solid #e2e8f0"
+  },
+  tableWrap: {
+    overflowX: "auto"
+  },
+  table: {
     width: "100%",
+    borderCollapse: "collapse",
+    fontSize: 13,
+    background: "#fff"
   },
-
-  field: { marginBottom: 14 },
-  label: { fontWeight: 600, marginBottom: 6, display: "block" },
-  input: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #e2e8f0",
-  },
-
-  dropzone: {
-    border: "2px dashed #e2e8f0",
-    borderRadius: 12,
-    padding: 20,
-    textAlign: "center",
-    marginTop: 16,
-  },
-
-  actions: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginTop: 16,
-  },
-
-  primaryBtn: {
-    background: "#2563eb",
-    color: "#fff",
-    border: "none",
-    padding: "10px 18px",
-    borderRadius: 8,
+  th: {
+    textAlign: "left",
+    padding: "12px 12px",
+    background: "#f8fafc",
+    color: "#475569",
     fontWeight: 700,
-    cursor: "pointer",
+    borderBottom: "1px solid #e2e8f0"
   },
-
-  error: {
-    marginTop: 12,
-    color: "#b91c1c",
-    background: "#fef2f2",
-    padding: 10,
-    borderRadius: 8,
+  tr: {
+    borderBottom: "1px solid #f1f5f9"
   },
+  fileCell: {
+    padding: "12px",
+    fontWeight: 700,
+    color: "#0f172a"
+  },
+  timeCell: {
+    padding: "12px",
+    color: "#475569"
+  },
+  scoreCell: {
+    padding: "12px",
+    fontVariantNumeric: "tabular-nums",
+    color: "#111827",
+    fontWeight: 700
+  },
+  badgeCell: {
+    padding: "12px"
+  },
+  pill: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "4px 10px",
+    borderRadius: 999,
+    fontWeight: 700,
+    fontSize: 12,
+    color: "#0f172a"
+  },
+  actions: {
+    padding: "12px",
+    display: "flex",
+    gap: 10
+  },
+  link: {
+    color: "#2563eb",
+    fontWeight: 600,
+    textDecoration: "none"
+  }
 };

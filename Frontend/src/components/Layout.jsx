@@ -3,9 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 const navItems = [
-  { label: "Thêm dự án", to: "/" },
   { label: "Tổng quan", to: "/dashboard" },
-  { label: "Dự án", to: "/history" },
+  { label: "Phân tích mới", to: "/" },
+  { label: "Lịch sử phân tích", to: "/history" },
   { label: "So sánh", to: "/compare" },
   { label: "Cài đặt", to: "/settings" },
 ];
