@@ -29,6 +29,9 @@ app.use(
     credentials: true
   })
 );
+
+app.options("*", cors());
+
 app.use(express.json());
 
 app.use("/reports", express.static(path.join(__dirname, "..", "reports")));
