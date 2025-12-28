@@ -29,6 +29,9 @@ export default function UploadPage() {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showGuide, setShowGuide] = useState(false);
+
+  const isSubmitDisabled = loading || !file || Boolean(error);
 
   const navigate = useNavigate();
 
@@ -105,6 +108,12 @@ export default function UploadPage() {
       {/* ===== CARD ===== */}
       <div style={ui.card}>
         <form onSubmit={handleSubmit}>
+          <div style={ui.stepsRow}>
+            <div style={ui.stepItem}>1. Nhập thông tin</div>
+            <div style={ui.stepItem}>2. Tải .zip</div>
+            <div style={ui.stepItem}>3. Bắt đầu phân tích</div>
+          </div>
+
           {/* ===== THÔNG TIN DỰ ÁN ===== */}
           <div style={ui.sectionDivider}>Thông tin dự án</div>
 
@@ -171,6 +180,7 @@ export default function UploadPage() {
                 Dán link GitHub/GitLab
               </button>
             </div>
+            <div style={ui.helper}>Chọn tải file .zip để bắt đầu phân tích.</div>
 
             {uploadMethod === "link" && (
               <div style={ui.warning}>
@@ -221,75 +231,124 @@ export default function UploadPage() {
                 </div>
               </div>
 
+              {/* ===== ACTIONS (ĐẶT TRÊN HƯỚNG DẪN) ===== */}
+              <div style={{ ...ui.actionRow, marginTop: 12 }}>
+                <div style={ui.statusText}>
+                  {file ? `Đã chọn: ${file.name}` : "Chưa chọn tệp .zip"}
+                  {error ? ` · ${error}` : ""}
+                </div>
+                <button
+                  type="button"
+                  style={ui.secondaryBtn}
+                  onClick={resetForm}
+                  disabled={loading}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  style={ui.primaryBtn}
+                  disabled={isSubmitDisabled}
+                >
+                  {loading ? "Đang phân tích..." : "Bắt đầu phân tích"}
+                </button>
+              </div>
+
               {/* ===== HƯỚNG DẪN ===== */}
               <div style={ui.infoBox}>
-                <div style={ui.infoTitle}>
-                  ℹ️ Hướng dẫn cấu trúc file .zip
+                <div style={ui.infoHeader}>
+                  <div style={ui.infoTitle}>ℹ️ Hướng dẫn cấu trúc file .zip</div>
+                  <button
+                    type="button"
+                    style={ui.infoToggle}
+                    onClick={() => setShowGuide((v) => !v)}
+                  >
+                    {showGuide ? "Ẩn" : "Hiển thị"}
+                  </button>
                 </div>
 
-                <pre style={ui.zipTree}>{ZIP_STRUCTURE}</pre>
-
-                {/* ===== VÍ DỤ THEO NGÔN NGỮ ===== */}
-                <div style={ui.langExample}>
-                  <strong>Ví dụ theo ngôn ngữ:</strong>
-
-                  <div style={ui.langItem}>
-                    <b>JavaScript / TypeScript</b>
-                    <div>
-                      <code>src/index.js</code>
-                    </div>
-                    <div>
-                      <code>package.json</code>, <code>tsconfig.json</code>
-                    </div>
-                  </div>
-
-                  <div style={ui.langItem}>
-                    <b>Python</b>
-                    <div>
-                      <code>src/main.py</code>
-                    </div>
-                    <div>
-                      <code>requirements.txt</code>
-                    </div>
-                  </div>
-
-                  <div style={ui.langItem}>
-                    <b>Java</b>
-                    <div>
-                      <code>src/main/java/...</code>
-                    </div>
-                    <div>
-                      <code>pom.xml</code> hoặc <code>build.gradle</code>
-                    </div>
-                  </div>
+                <div style={ui.infoShortList}>
+                  <span>• Chỉ nén mã nguồn, bỏ node_modules/dist/build</span>
+                  <span>• Không lồng nhiều lớp thư mục</span>
+                  <span>• Dung lượng tối đa 50MB</span>
                 </div>
 
+                {showGuide && (
+                  <div style={ui.infoContent}>
+                    <pre style={ui.zipTree}>{ZIP_STRUCTURE}</pre>
 
-                <ul style={ui.noteList}>
-                  <li>Chỉ nén mã nguồn của dự án</li>
-                  <li>Không nén node_modules, dist, build</li>
-                  <li>Không nén nhiều lớp thư mục lồng nhau</li>
-                  <li>Dung lượng tối đa cho mỗi dự án là 50MB</li>
-                </ul>
+                    {/* ===== VÍ DỤ THEO NGÔN NGỮ ===== */}
+                    <div style={ui.langExample}>
+                      <strong>Ví dụ theo ngôn ngữ:</strong>
+
+                      <div style={ui.langItem}>
+                        <b>JavaScript / TypeScript</b>
+                        <div>
+                          <code>src/index.js</code>
+                        </div>
+                        <div>
+                          <code>package.json</code>, <code>tsconfig.json</code>
+                        </div>
+                      </div>
+
+                      <div style={ui.langItem}>
+                        <b>Python</b>
+                        <div>
+                          <code>src/main.py</code>
+                        </div>
+                        <div>
+                          <code>requirements.txt</code>
+                        </div>
+                      </div>
+
+                      <div style={ui.langItem}>
+                        <b>Java</b>
+                        <div>
+                          <code>src/main/java/...</code>
+                        </div>
+                        <div>
+                          <code>pom.xml</code> hoặc <code>build.gradle</code>
+                        </div>
+                      </div>
+                    </div>
+
+                    <ul style={ui.noteList}>
+                      <li>Chỉ nén mã nguồn của dự án</li>
+                      <li>Không nén node_modules, dist, build</li>
+                      <li>Không nén nhiều lớp thư mục lồng nhau</li>
+                      <li>Dung lượng tối đa cho mỗi dự án là 50MB</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </>
           )}
 
           {error && <div style={ui.error}>{error}</div>}
 
-          <div style={ui.actionRow}>
-            <button
-              type="button"
-              style={ui.secondaryBtn}
-              onClick={resetForm}
-              disabled={loading}
-            >
-              Hủy
-            </button>
-            <button type="submit" style={ui.primaryBtn} disabled={loading}>
-              {loading ? "Đang phân tích..." : "Bắt đầu phân tích"}
-            </button>
-          </div>
+          {uploadMethod !== "file" && (
+            <div style={ui.actionRow}>
+              <div style={ui.statusText}>
+                {file ? `Đã chọn: ${file.name}` : "Chưa chọn tệp .zip"}
+                {error ? ` · ${error}` : ""}
+              </div>
+              <button
+                type="button"
+                style={ui.secondaryBtn}
+                onClick={resetForm}
+                disabled={loading}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                style={ui.primaryBtn}
+                disabled={isSubmitDisabled}
+              >
+                {loading ? "Đang phân tích..." : "Bắt đầu phân tích"}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
@@ -378,7 +437,36 @@ const ui = {
     border: "1px solid #e2e8f0",
     background: "#f8fafc",
   },
-  infoTitle: { fontWeight: 700, marginBottom: 8 },
+  infoHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 6,
+  },
+  infoTitle: { fontWeight: 700 },
+  infoToggle: {
+    border: "1px solid #e2e8f0",
+    background: "#fff",
+    borderRadius: 8,
+    padding: "6px 10px",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+  infoShortList: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
+    fontSize: 13,
+    color: "#475569",
+    marginBottom: 6,
+  },
+  infoContent: {
+    marginTop: 8,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
 
   zipTree: {
     background: "#ffffff",
@@ -433,6 +521,7 @@ const ui = {
     borderRadius: 10,
     border: "none",
     fontWeight: 700,
+    marginTop: 6,
   },
   secondaryBtn: {
     background: "#f1f5f9",
@@ -440,5 +529,32 @@ const ui = {
     padding: "10px 18px",
     borderRadius: 10,
     fontWeight: 600,
+    marginTop: 6,
+  },
+  stepsRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: 10,
+    marginBottom: 12,
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: 10,
+  },
+  stepItem: {
+    fontWeight: 600,
+    color: "#1f2937",
+    fontSize: 13,
+  },
+  helper: {
+    marginTop: 6,
+    color: "#475569",
+    fontSize: 13,
+  },
+  statusText: {
+    color: "#475569",
+    fontSize: 13,
+    marginRight: "auto",
+    marginTop: 6,
   },
 };

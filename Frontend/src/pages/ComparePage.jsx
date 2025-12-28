@@ -40,6 +40,26 @@ function deltaStyle(delta) {
   return ui.deltaNeutral;
 }
 
+function checkQualityGate(meta) {
+  const fails = [];
+  if ((meta.lintErrors ?? 0) > 0) fails.push("Có lỗi lint");
+  if ((meta.dupPercent ?? 100) > 10) fails.push("Trùng lặp > 10%");
+  if ((meta.commentDensity ?? 0) < 10) fails.push("Chú thích < 10%");
+  if ((meta.complexityAvg ?? 100) > 10) fails.push("Độ phức tạp TB > 10");
+
+  return {
+    pass: fails.length === 0,
+    fails
+  };
+}
+
+function buildOverallConclusion(a, b) {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return "Không đủ dữ liệu để kết luận.";
+  if (b > a) return "Phiên bản B có chất lượng TỐT HƠN phiên bản A.";
+  if (b < a) return "Phiên bản B có chất lượng KÉM HƠN phiên bản A.";
+  return "Chất lượng hai phiên bản TƯƠNG ĐƯƠNG.";
+}
+
 export default function ComparePage() {
   const [list, setList] = useState([]);
   const [selectedA, setSelectedA] = useState("");
@@ -81,6 +101,11 @@ export default function ComparePage() {
       .finally(() => setLoading(false));
   }, [selectedB]);
 
+  const gate = useMemo(() => {
+    if (!analysisB) return null;
+    return checkQualityGate(analysisB.scores?.meta || {});
+  }, [analysisB]);
+
   const paired = useMemo(() => {
     if (!analysisA || !analysisB) return [];
 
@@ -114,6 +139,14 @@ export default function ComparePage() {
     });
 
     return rows;
+  }, [analysisA, analysisB]);
+
+  const overallConclusion = useMemo(() => {
+    if (!analysisA || !analysisB) return null;
+    return buildOverallConclusion(
+      analysisA.scores?.summary?.overall,
+      analysisB.scores?.summary?.overall
+    );
   }, [analysisA, analysisB]);
 
   const headerA = analysisA?.projectName || analysisA?.scores?.project_name || "A";
@@ -160,6 +193,39 @@ export default function ComparePage() {
       </div>
 
       {loading && <p style={ui.muted}>Đang tải dữ liệu...</p>}
+
+      {gate && (
+        <div
+          style={{
+            padding: 12,
+            borderRadius: 10,
+            background: gate.pass ? "#ecfdf3" : "#fef2f2",
+            border: `1px solid ${gate.pass ? "#86efac" : "#fecaca"}`
+          }}
+        >
+          <strong>Quality Gate:</strong> {gate.pass ? "PASS" : "FAIL"}
+          {!gate.pass && (
+            <ul style={{ margin: "6px 0 0 16px" }}>
+              {gate.fails.map((f, i) => (
+                <li key={i}>{f}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {overallConclusion && (
+        <div
+          style={{
+            padding: 12,
+            borderRadius: 10,
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0"
+          }}
+        >
+          <strong>Kết luận tổng thể:</strong> {overallConclusion}
+        </div>
+      )}
 
       {analysisA && analysisB && (
         <div style={ui.tableWrap}>

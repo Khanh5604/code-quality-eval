@@ -88,8 +88,8 @@ export default function DashboardPage() {
           <div style={ui.cardsGrid}>
             <StatCard label="Điểm TB" value={stats.avg} helper="Overall trung bình" color="#2563eb" trend="+2.4" />
             <StatCard label="Điểm cao nhất" value={stats.best} helper="Phiên tốt nhất" color="#16a34a" />
-            <StatCard label="Lint tích luỹ" value={stats.lint} helper="Tổng lỗi lint" color="#ef4444" />
-            <StatCard label="Dup trung bình" value={`${stats.dup}%`} helper="Tỷ lệ trùng lặp" color="#8b5cf6" />
+            <StatCard label="Tổng số lỗi lint" value={stats.lint} helper="Tổng lỗi lint" color="#ef4444" />
+            <StatCard label="Tỷ lệ trùng lặp mã" value={`${stats.dup}%`} helper="Tỷ lệ trùng lặp" color="#8b5cf6" />
           </div>
 
           <div style={ui.chartsRow}>

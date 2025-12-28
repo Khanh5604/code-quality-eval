@@ -1,4 +1,5 @@
 const { supabaseAdmin } = require("../db/supabase");
+const { explainRule, defaultImpact } = require("../utils/explainRule");
 
 function requireField(condition, message) {
   if (!condition && condition !== 0) throw new Error(message);
@@ -149,6 +150,50 @@ async function getAnalysisById(userId, id) {
   if (iErr) throw iErr;
 
   // FE của bạn cần analysis.scores + issues
+  let scoringModel = a.raw_scores?.scoring_model || null;
+  
+  // Nếu không có scoring_model trong raw_scores, tạo từ weights nếu có
+  if (!scoringModel && a.raw_scores?.weights) {
+    const weights = a.raw_scores.weights;
+    scoringModel = {
+      style: {
+        weight: weights.style || 0,
+        basedOn: "Cấu hình người dùng"
+      },
+      complexity: {
+        weight: weights.complexity || 0,
+        basedOn: "Cấu hình người dùng"
+      },
+      duplication: {
+        weight: weights.duplication || 0,
+        basedOn: "Cấu hình người dùng"
+      },
+      comment: {
+        weight: weights.comment || 0,
+        basedOn: "Cấu hình người dùng"
+      }
+    };
+    // Cập nhật lại raw_scores để có scoring_model cho lần sau
+    if (a.raw_scores) {
+      a.raw_scores.scoring_model = scoringModel;
+    }
+  }
+  
+  // Đảm bảo scores object cũng có scoring_model
+  if (a.raw_scores && !a.raw_scores.scoring_model && scoringModel) {
+    a.raw_scores.scoring_model = scoringModel;
+  }
+  
+  const duplicationBlocks = Array.isArray(a.jscpd_result?.raw?.duplicates)
+    ? a.jscpd_result.raw.duplicates.map((d) => ({
+        lines: d.lines || 0,
+        tokens: d.tokens || 0,
+        files: [d.firstFile, d.secondFile],
+        fragment: d.fragment || null,
+        suggestion: "Tách đoạn trùng thành hàm/tiện ích dùng chung (DRY)."
+      }))
+    : [];
+
   return {
     id: a.id,
     createdAt: a.created_at,
@@ -157,16 +202,39 @@ async function getAnalysisById(userId, id) {
     source: a.raw_scores?.source || null,
     clocResult: a.cloc_result || null,
     jscpdResult: a.jscpd_result || null,
-    issues: (issues || []).map((it) => ({
-      tool: it.tool,
-      file: it.file_path,
-      line: it.line || 0,
-      column: it.column_number || 0,
-      severity: it.severity || "warn",
-      rule: it.rule || "",
-      message: it.message || "",
-      suggestion: it.suggestion || ""
-    }))
+    scoring_model: scoringModel, // snake_case để tương thích với frontend
+    scoringModel, // camelCase để tương thích ngược
+    duplicationBlocks,
+    issues: (issues || []).map((it) => {
+      const detail = explainRule(it.rule);
+      return {
+        tool: it.tool,
+        file: it.file_path,
+        line: it.line || 0,
+        column: it.column_number || 0,
+        severity: it.severity || "warn",
+        rule: it.rule || "",
+        message: it.message || "",
+        description: detail.description || it.message || "",
+        impact: detail.impact || defaultImpact(it.rule),
+        suggestion: it.suggestion || detail.suggestion || ""
+      };
+    }),
+    lintIssues: (issues || []).map((it) => {
+      const detail = explainRule(it.rule);
+      return {
+        tool: it.tool,
+        file: it.file_path,
+        line: it.line || 0,
+        column: it.column_number || 0,
+        severity: it.severity || "warn",
+        rule: it.rule || "",
+        message: it.message || "",
+        description: detail.description || it.message || "",
+        impact: detail.impact || defaultImpact(it.rule),
+        suggestion: it.suggestion || detail.suggestion || ""
+      };
+    })
   };
 }
 

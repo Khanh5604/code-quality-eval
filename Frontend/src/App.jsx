@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 import UploadPage from "./pages/UploadPage.jsx";
 import ResultPage from "./pages/ResultPage.jsx";
+import AnalysisReportPage from "./pages/AnalysisReportPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
 import AnalysisDetailPage from "./pages/AnalysisDetailPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
@@ -45,9 +46,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="result/:id" element={<ProtectedRoute><ResultPage /></ProtectedRoute>} />
+        <Route path="result/:id" element={<ProtectedRoute><AnalysisReportPage /></ProtectedRoute>} />
         <Route path="history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-        <Route path="analysis/:id" element={<ProtectedRoute><AnalysisDetailPage /></ProtectedRoute>} />
+        <Route path="analysis/:id" element={<ProtectedRoute><AnalysisReportPage /></ProtectedRoute>} />
         <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="report/:id" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
         <Route path="compare" element={<ProtectedRoute><ComparePage /></ProtectedRoute>} />

@@ -44,6 +44,14 @@ export default function ResultPage() {
   const scores = analysis.scores;
   const weights = scores?.weights || {};
   const source = analysis.source || scores?.source;
+  const scoringModel = scores?.scoring_model || analysis.scoringModel || null;
+  const lintIssues = analysis.lintIssues || analysis.issues || [];
+  const duplicationBlocks = analysis.duplicationBlocks || (analysis.jscpdResult?.raw?.duplicates || []);
+  const duplicationItems = (Array.isArray(duplicationBlocks) ? duplicationBlocks : []).map((b) => ({
+    lines: b.lines || 0,
+    files: b.files || [b.firstFile, b.secondFile].filter(Boolean),
+    suggestion: b.suggestion || "Tách đoạn trùng thành hàm dùng chung."
+  }));
   const createdAt = new Date(scores.created_at);
   const formatDate = createdAt.toLocaleString();
   const projectName = analysis.projectName || scores?.project_name || "Dự án";
@@ -88,6 +96,22 @@ export default function ResultPage() {
             <span style={ui.badgeOutline}>0–100</span>
           </div>
           <MetricsChart metrics={scores.metrics} />
+          {scoringModel && (
+            <div style={ui.scoringBox}>
+              <p style={ui.smallTitle}>Cách tính điểm</p>
+              <ul style={ui.scoringList}>
+                {Object.keys(scoringModel).map((key) => (
+                  <li key={key} style={ui.scoringItem}>
+                    <div style={ui.scoringLabel}>{weightLabels[key] || key}</div>
+                    <div style={ui.scoringValue}>
+                      <strong>{Math.round((scoringModel[key].weight || 0) * 100)}%</strong>
+                      <span style={ui.scoringHint}>{scoringModel[key].basedOn}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </section>
 
@@ -168,6 +192,59 @@ export default function ResultPage() {
             );
           })}
         </div>
+      </section>
+
+      {/* ACTIONABLE FEEDBACK */}
+      <section style={ui.cardLarge}>
+        <div style={ui.cardHeader}>
+          <div>
+            <p style={ui.cardEyebrow}>Hành động ưu tiên</p>
+            <h3 style={ui.cardTitle}>Chi tiết lỗi & khuyến nghị</h3>
+          </div>
+          <span style={ui.badgeOutline}>Đọc và sửa theo gợi ý</span>
+        </div>
+
+        {lintIssues.length === 0 ? (
+          <p style={ui.success}>Không phát hiện lỗi lint.</p>
+        ) : (
+          <div style={ui.issueList}>
+            {lintIssues.slice(0, 10).map((it, idx) => (
+              <div key={`${it.file}-${idx}`} style={ui.issueItem}>
+                <div style={ui.issueTitle}>
+                  <span style={{ ...ui.severityPill, ...(it.severity === "error" ? ui.pillError : ui.pillWarn) }}>
+                    {it.severity === "error" ? "Lỗi" : "Cảnh báo"}
+                  </span>
+                  <strong>{it.rule || "(không rõ rule)"}</strong>
+                  <span style={ui.issuePath}>{it.file}:{it.line}</span>
+                </div>
+                <div style={ui.issueText}><strong>Mô tả:</strong> {it.description || it.message}</div>
+                <div style={ui.issueText}><strong>Tác động:</strong> {it.impact || "Ảnh hưởng chất lượng và khả năng bảo trì."}</div>
+                <div style={ui.issueText}><strong>Cách sửa:</strong> {it.suggestion || "Xem lại rule và chỉnh sửa."}</div>
+              </div>
+            ))}
+            {lintIssues.length > 10 && (
+              <p style={ui.muted}>Chỉ hiển thị 10 mục đầu. Xem đầy đủ ở trang chi tiết.</p>
+            )}
+          </div>
+        )}
+
+        {duplicationItems.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <p style={ui.smallTitle}>Đoạn trùng lặp nổi bật</p>
+            <div style={ui.issueList}>
+              {duplicationItems.slice(0, 5).map((b, i) => (
+                <div key={i} style={ui.issueItem}>
+                  <div style={ui.issueTitle}>
+                    <span style={{ ...ui.severityPill, ...ui.pillWarn }}>Trùng lặp</span>
+                    <strong>{b.lines} dòng</strong>
+                  </div>
+                  <div style={ui.issueText}><strong>File:</strong> {b.files?.join(" ↔ ")}</div>
+                  <div style={ui.issueText}><strong>Gợi ý:</strong> {b.suggestion || "Tách đoạn trùng thành hàm dùng chung."}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ACTIONS */}
@@ -364,6 +441,34 @@ const ui = {
     height: "100%",
     background: "linear-gradient(90deg, #6366f1, #14b8a6)"
   },
+  scoringBox: {
+    marginTop: 10,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: 12,
+    background: "#f8fafc"
+  },
+  scoringList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: 8
+  },
+  scoringItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center"
+  },
+  scoringLabel: { color: "#0f172a", fontWeight: 700 },
+  scoringValue: {
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    color: "#0f172a"
+  },
+  scoringHint: { color: "#475569", fontSize: 12 },
   sourceGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
@@ -397,6 +502,37 @@ const ui = {
     wordBreak: "break-all",
     fontFamily: "monospace"
   },
+  issueList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10
+  },
+  issueItem: {
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: 12,
+    background: "#f8fafc"
+  },
+  issueTitle: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 6,
+    color: "#0f172a"
+  },
+  issuePath: { color: "#475569", fontSize: 12 },
+  issueText: { margin: "4px 0", color: "#0f172a", lineHeight: 1.5 },
+  severityPill: {
+    padding: "4px 8px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 700
+  },
+  pillError: { background: "#fee2e2", color: "#b91c1c" },
+  pillWarn: { background: "#fff7ed", color: "#b45309" },
+  smallTitle: { margin: "6px 0", fontWeight: 700, color: "#0f172a" },
+  muted: { color: "#64748b" },
+  success: { color: "#16a34a", fontWeight: 700 },
   actions: {
     display: "flex",
     flexWrap: "wrap",

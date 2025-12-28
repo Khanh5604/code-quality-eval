@@ -187,8 +187,18 @@ const router = express.Router();
 router.get("/analyze-sample", async (req, res) => {
   try {
     const samplePath = path.join(__dirname, "..", "..", "sample-project");
+    let weights = undefined;
+    if (req.user?.id) {
+      try {
+        weights = await loadUserWeights(req.user.id);
+      } catch (err) {
+        logWarn(`Load user weights for sample failed, using defaults: ${err?.message || err}`);
+      }
+    }
+
     const analysis = await analyzeProject(samplePath, {
-      projectName: "sample-project"
+      projectName: "sample-project",
+      weights
     });
     res.json(analysis);
   } catch (err) {
@@ -245,7 +255,40 @@ router.post("/analyze", requireAuth, upload.single("projectZip"), async (req, re
       extractDir: ctx.extractDir,
       analysisId: ctx.analysisId,
       sourceInfo
+      
     });
+
+    // Đảm bảo scoring_model luôn có trong response (fallback cuối cùng)
+    if (!analysis.scoring_model) {
+      const weights = analysis.scores?.weights || {};
+      analysis.scoring_model = {
+        style: {
+          weight: weights.style || 0,
+          basedOn: "Cấu hình người dùng"
+        },
+        complexity: {
+          weight: weights.complexity || 0,
+          basedOn: "Cấu hình người dùng"
+        },
+        duplication: {
+          weight: weights.duplication || 0,
+          basedOn: "Cấu hình người dùng"
+        },
+        comment: {
+          weight: weights.comment || 0,
+          basedOn: "Cấu hình người dùng"
+        }
+      };
+      // Cũng thêm vào scores để đảm bảo consistency
+      if (analysis.scores && !analysis.scores.scoring_model) {
+        analysis.scores.scoring_model = analysis.scoring_model;
+      }
+    }
+    
+    // Debug: log để kiểm tra
+    if (process.env.NODE_ENV !== "production") {
+      process.stdout.write(`Analysis ${analysis.id}: scoring_model exists: ${!!analysis.scoring_model}, scores.scoring_model exists: ${!!analysis.scores?.scoring_model}\n`);
+    }
 
     return res.status(201).json(analysis);
   } catch (err) {
@@ -280,6 +323,7 @@ router.get("/analyses/:id", requireAuth, async (req, res) => {
 
 // ================== SETTINGS: WEIGHTS ==================
 router.get("/settings/weights", requireAuth, async (req, res) => {
+   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   try {
     const weights = await settingsStore.getWeights(req.user.id);
     res.json({ weights });

@@ -188,6 +188,13 @@ function computeScores({
 
   const effectiveWeights = resolveWeights(weights);
 
+  const scoring_model = {
+    style: { weight: effectiveWeights.style, basedOn: "ESLint violations / 1k LOC" },
+    complexity: { weight: effectiveWeights.complexity, basedOn: "Độ phức tạp chu trình trung bình" },
+    duplication: { weight: effectiveWeights.duplication, basedOn: "Tỷ lệ trùng lặp JSCPD (%)" },
+    comment: { weight: effectiveWeights.comment, basedOn: "Mật độ chú thích (%)" }
+  };
+
   const overall = Math.round(
     Object.keys(metrics).reduce(
       (acc, key) => acc + (metrics[key] || 0) * (effectiveWeights[key] || 0),
@@ -213,6 +220,7 @@ function computeScores({
     },
     metrics,
     weights: effectiveWeights,
+    scoring_model,
     created_at: timestamp.toISOString()
   };
 }
