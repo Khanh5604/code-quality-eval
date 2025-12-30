@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { supabase } from "../supabaseClient";
 
 /* ================= CONSTANT ================= */
 const ZIP_STRUCTURE = `
@@ -20,7 +22,11 @@ const languages = [
 ];
 
 export default function UploadPage() {
+  const [projects, setProjects] = useState([]);
+  const [projectMode, setProjectMode] = useState("existing"); // existing | new
+  const [projectId, setProjectId] = useState("");
   const [projectName, setProjectName] = useState("");
+  const [versionLabel, setVersionLabel] = useState("");
   const [description, setDescription] = useState("");
   const [language, setLanguage] = useState("auto");
   const [uploadMethod, setUploadMethod] = useState("file");
@@ -35,11 +41,45 @@ export default function UploadPage() {
 
   const navigate = useNavigate();
 
-  const handleFileChange = (f) => {
-    setFile(f || null);
-    if (f) setError("");
-  };
+  useEffect(() => {
+    const loadProjects = async () => {
+      // ❗ CHỈ GỌI API KHI ĐÃ LOGIN
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) return;
+  
+      try {
+        const res = await api.get("/api/projects");
+        setProjects(res.data);
+      } catch (err) {
+        setError(
+          err?.response?.data?.message ||
+          "Không thể tải danh sách dự án."
+        );
+      }
+    };
+  
+    loadProjects();
+  }, []);
+  const uniqueProjects = Array.from(
+    new Map(projects.map(p => [p.id, p])).values()
+  );
 
+  const handleFileChange = (f) => {
+    if (!f) {
+      setFile(null);
+      return;
+    }
+  
+    if (!f.name.endsWith(".zip")) {
+      setError("Vui lòng chọn tệp .zip hợp lệ.");
+      setFile(null);
+      return;
+    }
+  
+    setFile(f);
+    setError("");
+  };
+  
   const onDrop = (e) => {
     e.preventDefault();
     setDragging(false);
@@ -64,26 +104,55 @@ export default function UploadPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+  
+    // ===== VALIDATE PROJECT =====
+    if (projectMode === "existing" && !projectId) {
+      setError("Vui lòng chọn dự án.");
+      return;
+    }
+    if (projectMode === "existing" && !versionLabel.trim()) {
+      setError("Vui lòng nhập phiên bản (version) cho dự án.");
+      return;
+    }
+    if (projectMode === "existing" && existingVersions.some(v => v.label === versionLabel.trim())) {
+      setError("Phiên bản này đã tồn tại trong dự án. Vui lòng nhập phiên bản mới, không trùng với các phiên bản đã phân tích.");
+      return;
+    }
+  
+    if (projectMode === "new" && !projectName.trim()) {
+      setError("Vui lòng nhập tên dự án mới.");
+      return;
+    }
+    // ============================
+  
     if (uploadMethod === "link") {
       setError("Hiện tại hệ thống chỉ hỗ trợ phân tích từ file .zip.");
       return;
     }
-
+  
     if (!file) {
       setError("Vui lòng chọn file .zip để phân tích.");
       return;
     }
+    
 
     const formData = new FormData();
+    
+    
+    if (projectMode === "existing") {
+      formData.append("projectId", projectId);
+      formData.append("versionLabel", versionLabel);
+    } else {
+      formData.append("projectName", projectName);
+    }
     formData.append("projectZip", file);
-    formData.append("projectName", projectName);
+  
     if (description) formData.append("description", description);
     if (language !== "auto") formData.append("language", language);
-
+  
     try {
       setLoading(true);
-      const res = await api.post("/analyze", formData, {
+      const res = await api.post("/api/analyze", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       navigate(`/result/${res.data.id}`);
@@ -93,7 +162,17 @@ export default function UploadPage() {
       setLoading(false);
     }
   };
-
+    const [existingVersions, setExistingVersions] = useState([]);
+  // Lấy version list khi chọn projectId
+  useEffect(() => {
+    if (projectMode === "existing" && projectId) {
+      api.get(`/api/projects/${projectId}/versions`).then(res => {
+        setExistingVersions(res.data || []);
+      }).catch(() => setExistingVersions([]));
+    } else {
+      setExistingVersions([]);
+    }
+  }, [projectMode, projectId]);
   return (
     <div style={ui.page}>
       {/* ===== HEADER ===== */}
@@ -118,15 +197,88 @@ export default function UploadPage() {
           <div style={ui.sectionDivider}>Thông tin dự án</div>
 
           <div style={ui.field}>
-            <label style={ui.label}>Tên dự án *</label>
-            <input
-              style={ui.input}
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              placeholder="Nhập tên dự án..."
-              required
-            />
-          </div>
+              <label style={ui.label}>Dự án *</label>
+
+              <div style={ui.toggleRow}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProjectMode("existing");
+                    setProjectName("");
+                  }}
+                  style={{
+                    ...ui.toggleBtn,
+                    ...(projectMode === "existing" ? ui.toggleActive : {})
+                  }}
+                >
+                  Chọn dự án có sẵn
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProjectMode("new");
+                    setProjectId("");
+                    setVersionLabel("");
+                  }}
+                  style={{
+                    ...ui.toggleBtn,
+                    ...(projectMode === "new" ? ui.toggleActive : {})
+                  }}
+                >
+                  Tạo dự án mới
+                </button>
+              </div>
+            </div>
+
+            {projectMode === "existing" && (
+              <>
+                <div style={ui.field}>
+                  <label style={ui.label}>Chọn dự án</label>
+                  <select
+                    style={ui.input}
+                    value={projectId}
+                    onChange={(e) => setProjectId(e.target.value)}
+                    required
+                  >
+                    <option value="">-- chọn project --</option>
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={ui.field}>
+                  <label style={ui.label}>Phiên bản (Version) *</label>
+                  <input
+                    style={ui.input}
+                    value={versionLabel}
+                    onChange={e => setVersionLabel(e.target.value)}
+                    placeholder="Nhập version, ví dụ: v2, v2.0, iteration-2..."
+                    required
+                  />
+                  {existingVersions.length > 0 && (
+                    <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
+                      Phiên bản phải là mới, không trùng với các phiên bản đã phân tích: {existingVersions.map(v => v.label).join(', ')}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {projectMode === "new" && (
+              <div style={ui.field}>
+                <label style={ui.label}>Tên dự án mới *</label>
+                <input
+                  style={ui.input}
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="Nhập tên dự án..."
+                  required
+                />
+              </div>
+            )}
+
 
           <div style={ui.field}>
             <label style={ui.label}>Mô tả dự án</label>

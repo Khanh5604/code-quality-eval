@@ -1,5 +1,6 @@
 const { supabaseAdmin } = require("../db/supabase");
 const { explainRule, defaultImpact } = require("../utils/explainRule");
+const { buildQualityDetail } = require("../utils/qualityExplain");
 
 function requireField(condition, message) {
   if (!condition && condition !== 0) throw new Error(message);
@@ -24,12 +25,26 @@ function assertAnalysisInput(userId, analysis) {
   requireField(userId, "addAnalysis requires authenticated userId");
   requireField(analysis && typeof analysis === "object", "analysis payload is required");
   requireField(analysis.id, "analysis.id is required");
+  requireField(analysis.projectId, "analysis.projectId is required");
   requireField(analysis.projectName, "analysis.projectName is required");
-
+  
   assertSummary(analysis.scores?.summary);
   assertIssues(analysis.issues);
 }
+async function getProjectById(userId, projectId) {
+  if (!userId || !projectId) return null;
 
+  const { data, error } = await supabaseAdmin
+    .from("projects")
+    .select("id, name, created_at")
+    .eq("id", projectId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;}
+
+  
 async function addAnalysis(userId, analysis) {
   assertAnalysisInput(userId, analysis);
 
@@ -38,7 +53,12 @@ async function addAnalysis(userId, analysis) {
     {
       id: analysis.id,
       user_id: userId,
+      project_id: analysis.projectId,
       project_name: analysis.projectName,
+      version_id: analysis.versionId || null,
+      version_label: analysis.versionLabel || null,
+      version_index: analysis.versionIndex || null,
+      display_name: analysis.displayName || analysis.projectName,
       overall_score: analysis.scores.summary.overall,
       quality_level: analysis.scores.summary.quality_level,
       meta: analysis.scores.meta,
@@ -108,7 +128,20 @@ async function getAllAnalyses(userId) {
   if (!userId) throw new Error("getAllAnalyses requires authenticated userId");
   const { data, error } = await supabaseAdmin
     .from("analyses")
-    .select("id, project_name, overall_score, quality_level, meta, metrics, created_at")
+    .select(`
+      id,
+      project_id,
+      project_name,
+      version_id,
+      version_label,
+      version_index,
+      display_name,
+      overall_score,
+      quality_level,
+      meta,
+      metrics,
+      created_at
+    `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -117,8 +150,14 @@ async function getAllAnalyses(userId) {
   // Trả về gần giống format cũ để FE đỡ sửa
   return (data || []).map((row) => ({
     id: row.id,
+    
     createdAt: row.created_at,
+    projectId: row.project_id,
     projectName: row.project_name,
+    displayName: row.display_name,
+    versionLabel: row.version_label,
+    versionIndex: row.version_index,
+    
     scores: {
       project_name: row.project_name,
       summary: { overall: row.overall_score, quality_level: row.quality_level },
@@ -194,10 +233,25 @@ async function getAnalysisById(userId, id) {
       }))
     : [];
 
+  // Tự động tính lại qualityDetail nếu chưa có
+  let qualityDetail = a.raw_scores?.qualityDetail;
+  if (!qualityDetail && a.raw_scores?.meta) {
+    try {
+      qualityDetail = buildQualityDetail(a.raw_scores.meta);
+    } catch {
+      qualityDetail = null;
+    }
+  }
+
   return {
     id: a.id,
     createdAt: a.created_at,
     projectName: a.project_name,
+    projectId: a.project_id,
+    versionId: a.version_id,
+    versionLabel: a.version_label,
+    versionIndex: a.version_index,
+    displayName: a.display_name,
     scores: a.raw_scores,
     source: a.raw_scores?.source || null,
     clocResult: a.cloc_result || null,
@@ -205,6 +259,7 @@ async function getAnalysisById(userId, id) {
     scoring_model: scoringModel, // snake_case để tương thích với frontend
     scoringModel, // camelCase để tương thích ngược
     duplicationBlocks,
+    qualityDetail,
     issues: (issues || []).map((it) => {
       const detail = explainRule(it.rule);
       return {
@@ -239,6 +294,7 @@ async function getAnalysisById(userId, id) {
 }
 
 module.exports = {
+  getProjectById,
   addAnalysis,
   getAllAnalyses,
   getAnalysisById,

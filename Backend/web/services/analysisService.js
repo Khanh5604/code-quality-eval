@@ -11,29 +11,12 @@ const { runPmd } = require("../../tools/pmdRunner");
 const { computeScores } = require("../../tools/scorer");
 const { suggestionForEslint, suggestionForRuff, suggestionForPmd } = require("../../tools/suggestionMapper");
 const { explainRule, defaultImpact } = require("../utils/explainRule");
+const {
+  explainQuality,
+  buildQualityDetail
+} = require("../utils/qualityExplain");
 
-function buildScoringModelSnapshot(weights) {
-  if (!weights) return null;
 
-  return {
-    style: {
-      weight: weights.style,
-      basedOn: "Cấu hình người dùng"
-    },
-    complexity: {
-      weight: weights.complexity,
-      basedOn: "Cấu hình người dùng"
-    },
-    duplication: {
-      weight: weights.duplication,
-      basedOn: "Cấu hình người dùng"
-    },
-    comment: {
-      weight: weights.comment,
-      basedOn: "Cấu hình người dùng"
-    }
-  };
-}
 
 function mapEslintIssues(eslintResult) {
   if (!Array.isArray(eslintResult?.raw)) return [];
@@ -111,24 +94,85 @@ function mapDuplicationBlocks(jscpdResult, projectPath) {
   if (!Array.isArray(duplicates)) return [];
 
   return duplicates.map((d) => {
-    const first = d.firstFile || "";
-    const second = d.secondFile || "";
-    const rel = (p) => projectPath ? path.relative(projectPath, p || "") || p : p;
+    const firstPath =
+      typeof d.firstFile === "string"
+        ? d.firstFile
+        : d.firstFile?.name || "";
+
+    const secondPath =
+      typeof d.secondFile === "string"
+        ? d.secondFile
+        : d.secondFile?.name || "";
+
+    const rel = (p) =>
+      projectPath && typeof p === "string"
+        ? path.relative(projectPath, p)
+        : p;
+
     return {
       lines: d.lines || 0,
       tokens: d.tokens || 0,
-      files: [rel(first), rel(second)],
+      files: [rel(firstPath), rel(secondPath)],
       fragment: d.fragment || null,
       suggestion: "Tách đoạn trùng thành hàm/tiện ích dùng chung (DRY)."
     };
   });
 }
 
+// function detectLanguages(projectPath) {
+//   const hasJS =
+//     glob.sync("**/*.js", { cwd: projectPath, nodir: true }).length > 0 ||
+//     glob.sync("**/*.jsx", { cwd: projectPath, nodir: true }).length > 0 ||
+//     glob.sync("**/*.ts", { cwd: projectPath, nodir: true }).length > 0 ||
+//     glob.sync("**/*.tsx", { cwd: projectPath, nodir: true }).length > 0;
+
+//   const hasPython =
+//     glob.sync("**/*.py", { cwd: projectPath, nodir: true }).length > 0;
+
+//   const hasJava =
+//     glob.sync("**/*.java", { cwd: projectPath, nodir: true }).length > 0;
+
+//   return { hasJS, hasPython, hasJava };
+  
+// }
 function detectLanguages(projectPath) {
-  const hasPython = glob.sync("**/*.py", { cwd: projectPath, nodir: true }).length > 0;
-  const hasJava = glob.sync("**/*.java", { cwd: projectPath, nodir: true }).length > 0;
-  return { hasPython, hasJava };
+  console.log("[detectLanguages] projectPath =", projectPath);
+
+  const jsFiles = glob.sync("**/*.{js,jsx,ts,tsx}", {
+    cwd: projectPath,
+    nodir: true,
+    absolute: true
+  });
+
+  const pyFiles = glob.sync("**/*.py", {
+    cwd: projectPath,
+    nodir: true,
+    absolute: true
+  });
+
+  const javaFiles = glob.sync("**/*.java", {
+    cwd: projectPath,
+    nodir: true,
+    absolute: true
+  });
+
+  console.log("[detectLanguages] found:", {
+    js: jsFiles,
+    py: pyFiles,
+    java: javaFiles
+  });
+
+  return {
+    hasJS: jsFiles.length > 0,
+    hasPython: pyFiles.length > 0,
+    hasJava: javaFiles.length > 0
+  };
 }
+
+
+// Đoạn kiểm tra này phải nằm trong hàm, không để ngoài scope toàn cục
+
+
 
 function logWarn(label, error) {
   // eslint-disable-next-line no-console
@@ -149,7 +193,7 @@ function computeComplexityOverride(radonResult, pmdResult) {
 }
 
 function resolveProjectName(projectPath, options) {
-  return options.projectName || path.basename(projectPath);
+  return options.projectName;
 }
 
 async function runPythonAnalyses(projectPath, hasPython) {
@@ -191,20 +235,30 @@ async function runJavaAnalyses(projectPath, hasJava) {
  * và lưu kết quả vào "DB" file.
  */
 async function analyzeProject(projectPath, options = {}) {
+  if (!options.projectId) {
+    throw new Error("analyzeProject requires projectId");
+    }
   const analysisId = options.analysisId || uuid();
   const sourceInfo = options.sourceInfo || null;
   const eslintResult = await runEslint(projectPath);
   const clocResult = await runCloc(projectPath);
   const jscpdResult = await runJscpd(projectPath);
 
-  const { hasPython, hasJava } = detectLanguages(projectPath);
+
+  // Debug: log projectPath và kết quả detectLanguages
+  console.log("[analyzeProject] projectPath=", projectPath);
+  const { hasJS, hasPython, hasJava } = detectLanguages(projectPath);
+  console.log("[analyzeProject] detectLanguages:", { hasJS, hasPython, hasJava });
+  if (!hasJS && !hasPython && !hasJava) {
+    console.warn("Không xác định được ngôn ngữ dự án từ mã nguồn. Chỉ chạy phân tích cơ bản.");
+  }
   const { ruffResult, radonResult } = await runPythonAnalyses(projectPath, hasPython);
   const { pmdResult } = await runJavaAnalyses(projectPath, hasJava);
 
   const lintOverride = computeLintOverride(ruffResult, pmdResult);
   const complexityOverride = computeComplexityOverride(radonResult, pmdResult);
   const projectName = resolveProjectName(projectPath, options);
-  const weights = options.weights; // weights từ user settings (có thể là default nếu user chưa cấu hình)
+  const weights = options.weights;
   
 
 
@@ -218,26 +272,26 @@ async function analyzeProject(projectPath, options = {}) {
     weights
   });
 
-  // Tạo scoring_model từ scores.weights (weights đã được normalize và dùng để tính điểm)
-  // basedOn = "Cấu hình người dùng" vì weights luôn đến từ user settings (có thể là default)
+ const meta = {
+  lintErrors: Number(scores.meta?.lintErrors) || 0,
+  dupPercent: Number(scores.meta?.dupPercent) || 0,
+  commentDensity: Number(scores.meta?.commentDensity) || 0,
+  complexityAvg: Number(scores.meta?.complexityAvg) || 0
+};
+
+const explanation = explainQuality(meta);
+const qualityDetail = buildQualityDetail(meta);
+
+
+
+  // CÁCH ĐƠN GIẢN NHẤT: Tạo scoring_model trực tiếp từ scores.weights (đã normalize)
+  // Không cần kiểm tra gì cả, chỉ cần tạo và gán
   const w = scores.weights || {};
   scores.scoring_model = {
-    style: { 
-      weight: w.style || 0, 
-      basedOn: "Cấu hình người dùng" // Luôn là "Cấu hình người dùng" vì weights đến từ settings
-    },
-    complexity: { 
-      weight: w.complexity || 0, 
-      basedOn: "Cấu hình người dùng" 
-    },
-    duplication: { 
-      weight: w.duplication || 0, 
-      basedOn: "Cấu hình người dùng" 
-    },
-    comment: { 
-      weight: w.comment || 0, 
-      basedOn: "Cấu hình người dùng" 
-    }
+    style: { weight: w.style || 0, basedOn: weights ? "Cấu hình người dùng" : "ESLint violations / 1k LOC" },
+    complexity: { weight: w.complexity || 0, basedOn: weights ? "Cấu hình người dùng" : "Độ phức tạp chu trình trung bình" },
+    duplication: { weight: w.duplication || 0, basedOn: weights ? "Cấu hình người dùng" : "Tỷ lệ trùng lặp JSCPD (%)" },
+    comment: { weight: w.comment || 0, basedOn: weights ? "Cấu hình người dùng" : "Mật độ chú thích (%)" }
   };
 
 
@@ -253,11 +307,14 @@ async function analyzeProject(projectPath, options = {}) {
 
   const analysis = {
     id: analysisId,
+    projectId: options.projectId,
     createdAt,
-    projectName: scores.project_name,
+    projectName: scores.project_name || scores.projectName || projectName,
     source: sourceInfo || null,
     scoring_model: scores.scoring_model, // Đã được tạo ở trên
     scores,
+    explanation,
+    qualityDetail,
     eslintResult,
     clocResult,
     jscpdResult,

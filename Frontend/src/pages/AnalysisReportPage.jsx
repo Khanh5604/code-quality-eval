@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import ScoreSummary from "../components/ScoreSummary";
 import MetricsChart from "../components/MetricsChart";
 
+
 /* ================= LABELS ================= */
 const weightLabels = {
   style: "Phong cách",
@@ -179,7 +180,7 @@ export default function AnalysisReportPage() {
     useEffect(() => {
     async function fetchCurrentWeights() {
         try {
-        const { data } = await api.get("/settings/weights", {
+        const { data } = await api.get("/api/settings/weights", {
             headers: { "Cache-Control": "no-cache" }
         });
         if (data?.weights) {
@@ -195,7 +196,7 @@ export default function AnalysisReportPage() {
 
   useEffect(() => {
     api
-      .get(`/analyses/${id}`)
+      .get(`/api/analyses/${id}`)
       .then((res) => setAnalysis(res.data))
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
@@ -285,8 +286,11 @@ const displayWeights = isHistoryView
   : defaultWeights;
 
   const createdAt = scores.created_at ? new Date(scores.created_at) : null;
-  const projectName = analysis.projectName || scores.project_name || "Dự án";
-  const grade = gradeMeta(scores.summary?.quality_level);
+  const projectName =
+    analysis.displayName ||
+    analysis.projectName ||
+    
+  "Dự án";  const grade = gradeMeta(scores.summary?.quality_level);
 
 
 
@@ -304,7 +308,11 @@ const displayWeights = isHistoryView
       <section style={ui.hero}>
         <div>
           <p style={ui.eyebrow}>Báo cáo phân tích</p>
-          <h1 style={ui.title}>{projectName}</h1>
+          {analysis.versionIndex && (
+            <p style={{ margin: 0, fontSize: 14, color: "#cbd5e1" }}>
+              Phiên bản v{analysis.versionIndex} · {analysis.versionLabel}
+            </p>
+          )}
           <div style={ui.heroMeta}>
             <span style={ui.chipDark}>Mã: {analysis.id}</span>
             <span style={ui.chipLight}>
@@ -357,46 +365,38 @@ const displayWeights = isHistoryView
               ))}
             </ul>
           </div>
+          
 
           <ScoreSummary summary={scores.summary} />
           <p style={ui.desc}>
             {qualityDescription(scores.summary.quality_level)}
           </p>
 
-          {/* WHY */}
-          <div style={ui.whyBox}>
-            <p style={ui.whyTitle}>
-              Vì sao dự án đạt <strong>{scores.summary.overall}</strong> điểm?
-            </p>
-            <ul style={ui.whyList}>
-              {meta.lintErrors > 0 && (
-                <li>Phong cách bị trừ do {meta.lintErrors} lỗi lint.</li>
-              )}
-              {meta.lintErrors === 0 && (
-                <li>Phong cách đạt chuẩn, không phát hiện lỗi lint.</li>
-              )}
-
-              {meta.dupPercent > 10 && (
-                <li>Trùng lặp {meta.dupPercent}% cần refactor xuống dưới 10%.</li>
-              )}
-              {meta.dupPercent <= 10 && (
-                <li>Trùng lặp đang ở mức chấp nhận ({meta.dupPercent}%).</li>
-              )}
-
-              {meta.commentDensity < 10 && (
-                <li>Mật độ chú thích thấp ({meta.commentDensity}%), nên bổ sung cho các hàm phức tạp.</li>
-              )}
-              {meta.commentDensity >= 10 && meta.commentDensity <= 25 && (
-                <li>Mật độ chú thích hợp lý ({meta.commentDensity}%).</li>
-              )}
-              {meta.commentDensity > 25 && (
-                <li>Mật độ chú thích cao ({meta.commentDensity}%), cần đảm bảo ngắn gọn và cập nhật.</li>
-              )}
-            </ul>
+          {/* Chi tiết chất lượng */}
+          <div style={ui.explainBox}>
+            {analysis.qualityDetail && Array.isArray(analysis.qualityDetail.items) ? (
+              <>
+                <ul>
+                  {analysis.qualityDetail.items.map((t, i) => (
+                    <li key={i}>{t}</li>
+                  ))}
+                </ul>
+                <p style={{ fontWeight: 700 }}>
+                  → {analysis.qualityDetail.conclusion}
+                </p>
+              </>
+            ) : (
+              <p style={{ color: '#b91c1c' }}>Không có dữ liệu chi tiết chất lượng.</p>
+            )}
           </div>
-          
 
-         
+          {/* WHY */}
+          <ul style={ui.whyList}>
+            {(analysis.explanation || []).map((item, i) => (
+              <li key={i}>{item.text}</li>
+            ))}
+          </ul>
+
         </div>
 
         {/* Radar */}

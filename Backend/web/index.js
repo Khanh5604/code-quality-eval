@@ -8,12 +8,12 @@ const { scheduleArchiveCleanup } = require("./utils/archiveCleanup");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const API_PREFIX = process.env.API_PREFIX || "/api";
+const API_PREFIX = (process.env.API_PREFIX || "/api").replace(/\/+$/, "");
 const ARCHIVE_DIR = path.join(__dirname, "..", "uploads", "archive");
 const ARCHIVE_TTL_HOURS = Number(process.env.ARCHIVE_TTL_HOURS || 24 * 7);
 const ARCHIVE_CLEAN_INTERVAL_HOURS = Number(process.env.ARCHIVE_CLEAN_INTERVAL_HOURS || 6);
 const ARCHIVE_WARN_MB = Number(process.env.ARCHIVE_WARN_MB || 512); // cảnh báo khi archive > ngưỡng
-
+const projectRoutes = require("./routes/project.routes");
 // Hỗ trợ nhiều origin, phân tách bởi dấu phẩy để tiện dùng cho localhost và Vercel.
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || "http://localhost:5173").split(",")
   .map((s) => s.trim())
@@ -47,12 +47,21 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Cache-Control",
+      "Pragma"
+    ],
+    
     exposedHeaders: ["Content-Range", "X-Content-Range"]
   })
 );
 
 // Handle preflight requests
+app.use(`${API_PREFIX}/projects`, projectRoutes);
+console.log(">>> MOUNTED /api/projects <<<");
 app.options("*", cors());
 
 app.use(express.json());

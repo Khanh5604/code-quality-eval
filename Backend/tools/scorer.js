@@ -94,32 +94,50 @@ function computeLint(eslint, lintErrorsOverride) {
 }
 
 function computeComplexity(complexityValues, complexityAvgOverride) {
-  if (complexityAvgOverride !== undefined) return toNumber(complexityAvgOverride, 0);
-  if (!complexityValues.length) return 0;
+  if (complexityAvgOverride !== undefined)
+    return toNumber(complexityAvgOverride, null);
+
+  if (!complexityValues.length)
+    return null; // ❗ KHÔNG đo được
+
   const sum = complexityValues.reduce((a, b) => a + b, 0);
   return sum / complexityValues.length;
 }
 
+
 function extractDupPercent(jscpd) {
-  const raw = jscpd?.statistics?.total?.percentage;
-  if (raw === undefined || raw === null) return 0;
-  const num = Number(raw);
-  if (!Number.isFinite(num)) {
-    // eslint-disable-next-line no-console
-    console.warn("computeScores: tỷ lệ trùng lặp không hợp lệ, mặc định 0");
-    return 0;
-  }
-  return num;
-}
+//   const raw = jscpd?.statistics?.total?.percentage;
+//   if (raw === undefined || raw === null) return null;
+//   const num = Number(raw);
+//   if (!Number.isFinite(num)) {
+//     // eslint-disable-next-line no-console
+//     console.warn("computeScores: tỷ lệ trùng lặp không hợp lệ, mặc định 0");
+//     return null;
+//   }
+//   return num;
+// }
+    if (!jscpd) return null;
+
+      if (typeof jscpd.duplicatedPercent === "number") {
+        return jscpd.duplicatedPercent;
+      }
+
+      const raw = jscpd.statistics?.total?.percentage;
+      if (raw === undefined || raw === null) return null;
+
+      const num = Number(raw);
+      return Number.isFinite(num) ? num : null;
+    }
 
 function scoreStyle(kLOC, lintErrors) {
-  if (kLOC <= 0) return 100;
+  if (kLOC <= 0) return 30;
+  if (lintErrors === 0) return 60;
   const errorsPerKloc = lintErrors / kLOC;
-  return clamp(100 - errorsPerKloc * 5);
+  return clamp(80 - errorsPerKloc * 5, 0, 80);
 }
 
 function scoreComplexity(c) {
-  if (c <= 0) return 100;
+  if (c === null) return 10;
   if (c <= 5) return 100;
   if (c <= 10) return 70;
   if (c <= 20) return 40;
@@ -127,20 +145,20 @@ function scoreComplexity(c) {
 }
 
 function scoreDuplication(p) {
-  // Hạ ngưỡng JSCPD: phạt sớm hơn khi tỷ lệ trùng lặp tăng
-  if (p <= 3) return 100;
-  if (p <= 8) return 80;
-  if (p <= 15) return 50;
-  return 20;
+  if (p === null) return 30;
+  if (p <= 3) return 80;
+  if (p <= 8) return 60;
+  if (p <= 15) return 40;
+  return 10;
 }
 
 function scoreComment(p) {
-  if (p >= 10 && p <= 25) return 100;
-  if (p <= 0.001) return 20;
-  if (p > 40) return 60;
-  if (p < 10) return clamp(20 + (p / 10) * 80);
-  if (p < 40) return clamp(100 - ((p - 25) / 15) * 40);
-  return 60;
+  if (p === null || p === undefined) return 30;
+  if (p <= 2) return 20;        
+  if (p < 10) return 50;          
+  if (p <= 20) return 100;       
+  if (p <= 30) return 70;         
+  return 50;                     
 }
 
 /**
@@ -179,12 +197,26 @@ function computeScores({
   const complexityAvg = computeComplexity(complexityValues, complexityAvgOverride);
   const dupPercent = extractDupPercent(jscpd);
 
+  
+
+  const styleScore = Math.round(scoreStyle(kLOC, lintErrors));
+  const complexityScore = Math.round(scoreComplexity(complexityAvg));
+  const duplicationScore = Math.round(scoreDuplication(dupPercent));
+
+  let commentScore = Math.round(scoreComment(commentDensity));
+
+  // Phạt comment nếu code quá phức tạp
+  if (complexityAvg !== null && complexityAvg > 15 && commentScore >= 100) {
+    commentScore = 70;
+  }
+
   const metrics = {
-    style: Math.round(scoreStyle(kLOC, lintErrors)),
-    complexity: Math.round(scoreComplexity(complexityAvg)),
-    duplication: Math.round(scoreDuplication(dupPercent)),
-    comment: Math.round(scoreComment(commentDensity))
-  };
+  style: styleScore,
+  complexity: complexityScore,
+  duplication: duplicationScore,
+  comment: commentScore
+};
+
 
   const effectiveWeights = resolveWeights(weights);
 
@@ -214,8 +246,8 @@ function computeScores({
       commentLines,
       kLOC: Number(kLOC.toFixed(2)),
       lintErrors,
-      complexityAvg: Number(complexityAvg.toFixed(2)),
-      dupPercent: Number(dupPercent.toFixed(2)),
+      complexityAvg: complexityAvg === null ? null : Number(complexityAvg.toFixed(2)),
+      dupPercent: dupPercent === null ? null : Number(dupPercent.toFixed(2)),
       commentDensity: Number(commentDensity.toFixed(2))
     },
     metrics,

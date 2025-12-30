@@ -20,7 +20,7 @@ export default function SettingsPage() {
 
     async function fetchWeights() {
       try {
-        const { data } = await api.get("/settings/weights");
+        const { data } = await api.get("/api/settings/weights");
         if (!mounted) return;
         if (data?.weights) setWeights(data.weights);
         setStatus({ type: "info" });
@@ -52,7 +52,7 @@ export default function SettingsPage() {
     setSaving(true);
     setStatus({ type: "", message: "" });
     try {
-      const { data } = await api.put("/settings/weights", { weights });
+      const { data } = await api.put("/api/settings/weights", { weights });
       setWeights(data?.weights || weights);
       setStatus({ type: "success", message: "Đã lưu trọng số. Các phân tích mới sẽ dùng cấu hình này." });
     } catch (err) {

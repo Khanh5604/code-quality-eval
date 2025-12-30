@@ -13,9 +13,7 @@ const metaFields = [
   { key: "lintErrors", label: "Lỗi lint" },
   { key: "dupPercent", label: "Tỷ lệ trùng lặp (%)" },
   { key: "complexityAvg", label: "Độ phức tạp TB" },
-  { key: "commentDensity", label: "Mật độ comment (%)" },
-  { key: "codeLines", label: "Số dòng code" },
-  { key: "kLOC", label: "kLOC" }
+  { key: "commentDensity", label: "Mật độ comment (%)" }
 ];
 
 function formatNumber(val) {
@@ -70,22 +68,34 @@ export default function ComparePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api
-      .get("/analyses")
-      .then((res) => {
-        const items = res.data || [];
-        setList(items);
-        if (items.length >= 1) setSelectedA(items[0].id);
-        if (items.length >= 2) setSelectedB(items[1].id);
-      })
-      .catch((err) => setError(err?.response?.data?.message || "Không tải được danh sách"));
-  }, []);
+  api
+    .get("/api/analyses")
+    .then((res) => {
+      const items = res.data || [];
+      setList(items);
+
+      // 🔑 SẮP XẾP THEO VERSION
+      const sorted = [...items].sort(
+        (a, b) => (a.versionIndex ?? 0) - (b.versionIndex ?? 0)
+      );
+
+      // 🔑 A = bản cũ, B = bản mới
+      if (sorted.length >= 2) {
+        setSelectedA(sorted[sorted.length - 2].id);
+        setSelectedB(sorted[sorted.length - 1].id);
+      }
+    })
+    .catch((err) =>
+      setError(err?.response?.data?.message || "Không tải được danh sách")
+    );
+}, []);
+
 
   useEffect(() => {
     if (!selectedA) return;
     setLoading(true);
     api
-      .get(`/analyses/${selectedA}`)
+      .get(`/api/analyses/${selectedA}`)
       .then((res) => setAnalysisA(res.data))
       .catch((err) => setError(err?.response?.data?.message || "Không tải được dữ liệu A"))
       .finally(() => setLoading(false));
@@ -95,9 +105,17 @@ export default function ComparePage() {
     if (!selectedB) return;
     setLoading(true);
     api
-      .get(`/analyses/${selectedB}`)
+      .get(`/api/analyses/${selectedB}`)
       .then((res) => setAnalysisB(res.data))
-      .catch((err) => setError(err?.response?.data?.message || "Không tải được dữ liệu B"))
+      .catch((err) => {
+        console.error("Lỗi khi tải dữ liệu B:", err);
+        setError(
+          err?.response?.data?.message ||
+          err?.message ||
+          JSON.stringify(err) ||
+          "Không tải được dữ liệu B"
+        );
+      })
       .finally(() => setLoading(false));
   }, [selectedB]);
 
@@ -149,8 +167,19 @@ export default function ComparePage() {
     );
   }, [analysisA, analysisB]);
 
-  const headerA = analysisA?.projectName || analysisA?.scores?.project_name || "A";
-  const headerB = analysisB?.projectName || analysisB?.scores?.project_name || "B";
+    const headerA = analysisA?.displayName || analysisA?.project_name || "A";  const filteredListForB = useMemo(() => {
+    if (!analysisA) return list;
+    return list.filter(
+      (item) => item.projectName === analysisA.projectName
+    );
+  }, [list, analysisA]);
+  const headerB = analysisB?.displayName || analysisB?.project_name || "B";
+  const sameProject =
+  analysisA?.projectName &&
+  analysisB?.projectName &&
+  analysisA.projectName === analysisB.projectName;
+
+
 
   return (
     <div style={ui.page}>
@@ -174,7 +203,7 @@ export default function ComparePage() {
             <option value="">-- chọn --</option>
             {list.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.projectName} — {new Date(item.createdAt).toLocaleString()}
+                {item.displayName || item.projectName} — {new Date(item.createdAt).toLocaleString()}
               </option>
             ))}
           </select>
@@ -183,11 +212,11 @@ export default function ComparePage() {
           <label style={ui.label}>Report B</label>
           <select style={ui.select} value={selectedB} onChange={(e) => setSelectedB(e.target.value)}>
             <option value="">-- chọn --</option>
-            {list.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.projectName} — {new Date(item.createdAt).toLocaleString()}
-              </option>
-            ))}
+              {filteredListForB.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.displayName || item.projectName} — {new Date(item.createdAt).toLocaleString()}
+                </option>
+              ))}
           </select>
         </div>
       </div>
@@ -203,7 +232,7 @@ export default function ComparePage() {
             border: `1px solid ${gate.pass ? "#86efac" : "#fecaca"}`
           }}
         >
-          <strong>Quality Gate:</strong> {gate.pass ? "PASS" : "FAIL"}
+          <strong>Quality Gate (Report B):</strong> {gate.pass ? "PASS" : "FAIL"}
           {!gate.pass && (
             <ul style={{ margin: "6px 0 0 16px" }}>
               {gate.fails.map((f, i) => (
@@ -226,7 +255,20 @@ export default function ComparePage() {
           <strong>Kết luận tổng thể:</strong> {overallConclusion}
         </div>
       )}
-
+      {analysisA && analysisB && !sameProject && (
+        <div
+          style={{
+            background: "#fff7ed",
+            border: "1px solid #fed7aa",
+            padding: 12,
+            borderRadius: 10,
+            color: "#9a3412"
+          }}
+        >
+          ⚠️ Hai báo cáo thuộc các project khác nhau.
+          Kết quả so sánh chỉ mang tính tham khảo.
+        </div>
+      )}
       {analysisA && analysisB && (
         <div style={ui.tableWrap}>
           <table style={ui.table}>

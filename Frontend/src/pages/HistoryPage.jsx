@@ -6,14 +6,38 @@ import { Link } from "react-router-dom";
 export default function HistoryPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmItem, setConfirmItem] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api
-      .get("/analyses")
+      .get("/api/analyses")
       .then((res) => setItems(res.data || []))
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleDeleteProject() {
+  if (!confirmItem?.projectId) return;
+
+  try {
+    setDeleting(true);
+
+    await api.delete(`/api/projects/${confirmItem.projectId}`);
+
+    // Cập nhật UI ngay
+    setItems(prev =>
+      prev.filter(i => i.projectId !== confirmItem.projectId)
+    );
+
+    setConfirmItem(null);
+  } catch (err) {
+    alert(err?.response?.data?.message || "Xóa dự án thất bại");
+  } finally {
+    setDeleting(false);
+  }
+}
+
 
   return (
     <div style={ui.page}>
@@ -46,7 +70,9 @@ export default function HistoryPage() {
                   const scores = item.scores;
                   return (
                     <tr key={item.id} style={ui.tr}>
-                      <td style={ui.fileCell}>{item.projectName}</td>
+                      <td style={ui.fileCell}>
+                        {item.displayName || item.projectName}
+                      </td>
                       <td style={ui.timeCell}>{new Date(item.createdAt).toLocaleString()}</td>
                       <td style={ui.scoreCell}>{scores?.summary?.overall ?? "-"}</td>
                       <td style={ui.badgeCell}>
@@ -55,9 +81,14 @@ export default function HistoryPage() {
                         </span>
                       </td>
                       <td style={ui.actions}>
-                        <Link to={`/result/${item.id}`} style={ui.link}>Kết quả</Link>
                         <Link to={`/analysis/${item.id}`} style={ui.link}>Chi tiết</Link>
                         <Link to={`/report/${item.id}`} style={ui.link}>Báo cáo</Link>
+                         <button
+                          style={ui.deleteBtn}
+                          onClick={() => setConfirmItem(item)}
+                        >
+                          Xóa
+                        </button>
                       </td>
                     </tr>
                   );
@@ -66,10 +97,50 @@ export default function HistoryPage() {
             </table>
           </div>
         </div>
+        
       )}
+            {confirmItem && (
+        <div style={ui.modalOverlay}>
+          <div style={ui.modal}>
+            <h3>Xác nhận xóa dự án</h3>
+
+            <p>
+              Bạn có chắc chắn muốn xóa dự án
+              <strong> {confirmItem.projectName}</strong> không?
+            </p>
+
+            <p style={{ fontSize: 13, color: "#64748b" }}>
+              • Các phiên bản và lịch sử phân tích vẫn được giữ nguyên.<br />
+              • Hành động này không thể hoàn tác.
+            </p>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                style={ui.cancelBtn}
+                onClick={() => setConfirmItem(null)}
+                disabled={deleting}
+              >
+                Hủy
+              </button>
+
+              <button
+                style={ui.confirmDeleteBtn}
+                onClick={handleDeleteProject}
+                disabled={deleting}
+              >
+                {deleting ? "Đang xóa..." : "Xóa dự án"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      
     </div>
   );
 }
+
+
 
 function qualityColor(level) {
   if (level === "A") return "#d1fae5";
@@ -177,5 +248,47 @@ const ui = {
     color: "#2563eb",
     fontWeight: 600,
     textDecoration: "none"
-  }
+  },deleteBtn: {
+  border: "none",
+  background: "transparent",
+  color: "#dc2626",
+  fontWeight: 700,
+  cursor: "pointer"
+},
+
+modalOverlay: {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(15,23,42,0.5)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 100
+},
+
+modal: {
+  background: "#fff",
+  borderRadius: 12,
+  padding: 20,
+  width: 420,
+  boxShadow: "0 20px 50px rgba(0,0,0,0.25)"
+},
+
+cancelBtn: {
+  padding: "8px 14px",
+  borderRadius: 8,
+  border: "1px solid #e2e8f0",
+  background: "#fff",
+  fontWeight: 600
+},
+
+confirmDeleteBtn: {
+  padding: "8px 14px",
+  borderRadius: 8,
+  background: "#dc2626",
+  color: "#fff",
+  border: "none",
+  fontWeight: 700
+}
 };
+

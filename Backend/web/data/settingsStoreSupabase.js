@@ -10,6 +10,7 @@ async function getWeights(userId) {
     .from(TABLE)
     .select("weights")
     .eq("user_id", userId)
+    .eq("is_deleted", false)
     .single();
 
   if (error) {

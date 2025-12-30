@@ -9,7 +9,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     api
-      .get("/analyses")
+      .get("/api/analyses")
       .then((res) => setAnalyses(res.data || []))
       .catch((err) => setError(err?.response?.data?.message || "Không tải được dữ liệu"))
       .finally(() => setLoading(false));
@@ -131,7 +131,7 @@ export default function DashboardPage() {
                   <tbody>
                     {recent.map((a) => (
                       <tr key={a.id} style={ui.tr}>
-                        <td style={ui.fileCell}>{a.projectName || a.scores?.project_name}</td>
+                        <td style={ui.fileCell}>{a.displayName || a.projectName || a.scores?.project_name}</td>
                         <td style={ui.scoreCell}>{a.scores?.summary?.overall}</td>
                         <td style={ui.badgeCell}><span style={{ ...ui.pill, background: qualityColor(a.scores?.summary?.quality_level) }}>{a.scores?.summary?.quality_level}</span></td>
                         <td style={ui.lineCell}>{a.scores?.meta?.lintErrors}</td>
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                   {recent.map((a) => (
                     <li key={a.id} style={ui.alertItem}>
                       <div>
-                        <div style={ui.alertTitle}>{a.projectName || a.scores?.project_name}</div>
+                        <div style={ui.alertTitle}>{a.displayName || a.projectName || a.scores?.project_name}</div>
                         <div style={ui.alertMeta}>Lint: {a.scores?.meta?.lintErrors} • Dup: {a.scores?.meta?.dupPercent}%</div>
                       </div>
                       <Link to={`/analysis/${a.id}`} style={ui.link}>Xem</Link>
@@ -481,17 +481,46 @@ const ChartCard = ({ title, data, type }) => {
   return (
     <div style={ui.chartWrap}>
       <div style={ui.chartTitle}>{title}</div>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 180 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 180 }}>
         {data.map((d) => (
-          <div key={d.label} style={{ flex: 1, textAlign: "center" }}>
+          <div 
+            key={d.label} 
+            style={{ 
+              flex: 1, 
+              textAlign: "center", 
+              minWidth: 0,
+              position: "relative",
+              cursor: "pointer"
+            }}
+            title={d.label}
+          >
             <div
               style={{
                 height: `${(d.value / maxBar) * 140}px`,
                 background: "#2563eb",
-                borderRadius: "8px 8px 0 0"
+                borderRadius: "8px 8px 0 0",
+                transition: "opacity 0.2s"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "0.8";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = "1";
               }}
             />
-            <div style={{ marginTop: 6, fontSize: 11, color: "#475569" }}>{d.label}</div>
+            <div 
+              style={{ 
+                marginTop: 6, 
+                fontSize: 10, 
+                color: "#475569",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis"
+              }}
+              title={d.label}
+            >
+              {d.label}
+            </div>
           </div>
         ))}
       </div>

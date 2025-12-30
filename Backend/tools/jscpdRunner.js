@@ -66,7 +66,11 @@ function runJscpd(projectPath) {
         return reject(error);
       }
 
-      return resolve(extractStats(report));
+      return resolve({
+        raw: report,
+        duplicatedLines: extractStats(report).duplicatedLines,
+        duplicatedPercent: extractStats(report).duplicatedPercent
+      });
     });
   });
 }
