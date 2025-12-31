@@ -61,7 +61,7 @@ app.use(
 
 // Handle preflight requests
 app.use(`${API_PREFIX}/projects`, projectRoutes);
-console.log(">>> MOUNTED /api/projects <<<");
+process.stdout.write(">>> MOUNTED /api/projects <<<\n");
 app.options("*", cors());
 
 app.use(express.json());
@@ -79,7 +79,7 @@ app.use((req, res) => {
 });
 
 // Error handling middleware (must be last, with 4 parameters)
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   // CORS errors
   if (err.message && err.message.includes("CORS")) {
     if (process.env.NODE_ENV !== "production") {

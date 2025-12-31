@@ -192,68 +192,76 @@ function computeScores({
   const { codeLines, commentLines } = extractCloc(cloc);
   const kLOC = codeLines / 1000;
   const commentDensity = codeLines > 0 ? (commentLines / codeLines) * 100 : 0;
-
   const { lintErrors, complexityValues } = computeLint(eslint, lintErrorsOverride);
   const complexityAvg = computeComplexity(complexityValues, complexityAvgOverride);
   const dupPercent = extractDupPercent(jscpd);
+  const metrics = buildMetrics({ kLOC, lintErrors, complexityAvg, dupPercent, commentDensity });
+  const effectiveWeights = resolveWeights(weights);
+  const scoring_model = buildScoringModel(effectiveWeights);
+  const overall = computeOverallScore(metrics, effectiveWeights);
+  return {
+    project_name: projectName,
+    summary: buildSummary(overall),
+    meta: buildMeta({ codeLines, commentLines, kLOC, lintErrors, complexityAvg, dupPercent, commentDensity }),
+    metrics,
+    weights: effectiveWeights,
+    scoring_model,
+    created_at: timestamp.toISOString()
+  };
+}
 
-  
-
+function buildMetrics({ kLOC, lintErrors, complexityAvg, dupPercent, commentDensity }) {
   const styleScore = Math.round(scoreStyle(kLOC, lintErrors));
   const complexityScore = Math.round(scoreComplexity(complexityAvg));
   const duplicationScore = Math.round(scoreDuplication(dupPercent));
-
   let commentScore = Math.round(scoreComment(commentDensity));
-
   // Phạt comment nếu code quá phức tạp
   if (complexityAvg !== null && complexityAvg > 15 && commentScore >= 100) {
     commentScore = 70;
   }
+  return {
+    style: styleScore,
+    complexity: complexityScore,
+    duplication: duplicationScore,
+    comment: commentScore
+  };
+}
 
-  const metrics = {
-  style: styleScore,
-  complexity: complexityScore,
-  duplication: duplicationScore,
-  comment: commentScore
-};
-
-
-  const effectiveWeights = resolveWeights(weights);
-
-  const scoring_model = {
+function buildScoringModel(effectiveWeights) {
+  return {
     style: { weight: effectiveWeights.style, basedOn: "ESLint violations / 1k LOC" },
     complexity: { weight: effectiveWeights.complexity, basedOn: "Độ phức tạp chu trình trung bình" },
     duplication: { weight: effectiveWeights.duplication, basedOn: "Tỷ lệ trùng lặp JSCPD (%)" },
     comment: { weight: effectiveWeights.comment, basedOn: "Mật độ chú thích (%)" }
   };
+}
 
-  const overall = Math.round(
+function computeOverallScore(metrics, effectiveWeights) {
+  return Math.round(
     Object.keys(metrics).reduce(
       (acc, key) => acc + (metrics[key] || 0) * (effectiveWeights[key] || 0),
       0
     )
   );
+}
 
+function buildSummary(overall) {
   return {
-    project_name: projectName,
-    summary: {
-      overall,
-      quality_level:
-        overall >= 85 ? "A" : overall >= 70 ? "B" : overall >= 50 ? "C" : "D"
-    },
-    meta: {
-      codeLines,
-      commentLines,
-      kLOC: Number(kLOC.toFixed(2)),
-      lintErrors,
-      complexityAvg: complexityAvg === null ? null : Number(complexityAvg.toFixed(2)),
-      dupPercent: dupPercent === null ? null : Number(dupPercent.toFixed(2)),
-      commentDensity: Number(commentDensity.toFixed(2))
-    },
-    metrics,
-    weights: effectiveWeights,
-    scoring_model,
-    created_at: timestamp.toISOString()
+    overall,
+    quality_level:
+      overall >= 85 ? "A" : overall >= 70 ? "B" : overall >= 50 ? "C" : "D"
+  };
+}
+
+function buildMeta({ codeLines, commentLines, kLOC, lintErrors, complexityAvg, dupPercent, commentDensity }) {
+  return {
+    codeLines,
+    commentLines,
+    kLOC: Number(kLOC.toFixed(2)),
+    lintErrors,
+    complexityAvg: complexityAvg === null ? null : Number(complexityAvg.toFixed(2)),
+    dupPercent: dupPercent === null ? null : Number(dupPercent.toFixed(2)),
+    commentDensity: Number(commentDensity.toFixed(2))
   };
 }
 

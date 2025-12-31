@@ -30,7 +30,7 @@ export default function ReportPage() {
 
   useEffect(() => {
     api
-      .get(`/analyses/${id}`)
+      .get(`/api/analyses/${id}`)
       .then((res) => setAnalysis(res.data))
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));

@@ -17,22 +17,20 @@ export default function HistoryPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleDeleteProject() {
-  if (!confirmItem?.projectId) return;
+  async function handleDeleteAnalysis() {
+  if (!confirmItem?.id) return;
 
   try {
     setDeleting(true);
 
-    await api.delete(`/api/projects/${confirmItem.projectId}`);
+    await api.delete(`/api/analyses/${confirmItem.id}`);
 
-    // Cập nhật UI ngay
-    setItems(prev =>
-      prev.filter(i => i.projectId !== confirmItem.projectId)
-    );
+    // Cập nhật UI đúng
+    setItems(prev => prev.filter(i => i.id !== confirmItem.id));
 
     setConfirmItem(null);
   } catch (err) {
-    alert(err?.response?.data?.message || "Xóa dự án thất bại");
+    alert(err?.response?.data?.message || "Xóa phiên phân tích thất bại");
   } finally {
     setDeleting(false);
   }
@@ -102,7 +100,7 @@ export default function HistoryPage() {
             {confirmItem && (
         <div style={ui.modalOverlay}>
           <div style={ui.modal}>
-            <h3>Xác nhận xóa dự án</h3>
+            <h3>Xác nhận xóa phiên phân tích</h3>
 
             <p>
               Bạn có chắc chắn muốn xóa dự án
@@ -125,7 +123,7 @@ export default function HistoryPage() {
 
               <button
                 style={ui.confirmDeleteBtn}
-                onClick={handleDeleteProject}
+                onClick={handleDeleteAnalysis}
                 disabled={deleting}
               >
                 {deleting ? "Đang xóa..." : "Xóa dự án"}

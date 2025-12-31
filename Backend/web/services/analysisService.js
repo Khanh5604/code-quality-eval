@@ -1,4 +1,5 @@
 // web/services/analysisService.js
+/* eslint-disable no-console */
 const path = require("path");
 const { v4: uuid } = require("uuid");
 const glob = require("glob");
@@ -9,6 +10,7 @@ const { runRuff } = require("../../tools/ruffRunner");
 const { runRadon } = require("../../tools/radonRunner");
 const { runPmd } = require("../../tools/pmdRunner");
 const { computeScores } = require("../../tools/scorer");
+
 const { suggestionForEslint, suggestionForRuff, suggestionForPmd } = require("../../tools/suggestionMapper");
 const { explainRule, defaultImpact } = require("../utils/explainRule");
 const {
@@ -22,25 +24,37 @@ function mapEslintIssues(eslintResult) {
   if (!Array.isArray(eslintResult?.raw)) return [];
   return eslintResult.raw
     .filter(file => Array.isArray(file.messages))
-    .flatMap(file =>
-      file.messages.map(m => {
-        const detail = explainRule(m.ruleId);
-        const suggestion = suggestionForEslint(m) || detail.suggestion || "";
-        return {
-          tool: "eslint",
-          file: file.filePath,
-          line: m.line || 0,
-          column: m.column || 0,
-          severity: m.severity === 2 ? "error" : "warn",
-          rule: m.ruleId || "",
-          message: m.message || "",
-          description: detail.description || m.message || "",
-          impact: detail.impact || defaultImpact(m.ruleId),
-          fix: m.fix || null,
-          suggestion
-        };
-      })
-    );
+    .flatMap(file => file.messages.map(m => mapEslintMessage(file, m)));
+}
+
+function mapEslintMessage(file, m) {
+  const detail = explainRule(m.ruleId);
+  return {
+    tool: "eslint",
+    file: file.filePath,
+    line: m.line || 0,
+    column: m.column || 0,
+    severity: getEslintSeverity(m),
+    rule: m.ruleId || "",
+    message: m.message || "",
+    description: getEslintDescription(detail, m),
+    impact: getEslintImpact(detail, m),
+    fix: m.fix || null,
+    suggestion: getEslintSuggestion(m, detail)
+  };
+}
+
+function getEslintSeverity(m) {
+  return m.severity === 2 ? "error" : "warn";
+}
+function getEslintDescription(detail, m) {
+  return detail.description || m.message || "";
+}
+function getEslintImpact(detail, m) {
+  return detail.impact || defaultImpact(m.ruleId);
+}
+function getEslintSuggestion(m, detail) {
+  return suggestionForEslint(m) || detail.suggestion || "";
 }
 
 function mapRuffIssues(ruffResult) {
@@ -62,23 +76,37 @@ function mapRuffIssues(ruffResult) {
 
 function mapPmdIssues(pmdResult) {
   if (!pmdResult || !Array.isArray(pmdResult.raw?.violations)) return [];
-  return pmdResult.raw.violations.map(v => {
-    const detail = explainRule(v.rule);
-    const suggestion = suggestionForPmd(v.rule) || detail.suggestion || "Xem lại rule và refactor theo khuyến nghị.";
-    return {
-      tool: "pmd",
-      file: v.file || "",
-      line: v.beginline || 0,
-      column: v.begincolumn || 0,
-      severity: (v.priority && v.priority <= 2) ? "error" : "warn",
-      rule: v.rule || "",
-      message: v.description || v.rule || "",
-      description: detail.description || v.description || v.rule || "",
-      impact: detail.impact || defaultImpact(v.rule),
-      fix: null,
-      suggestion
-    };
-  });
+  return pmdResult.raw.violations.map(mapPmdViolation);
+}
+
+function mapPmdViolation(v) {
+  const detail = explainRule(v.rule);
+  return {
+    tool: "pmd",
+    file: v.file || "",
+    line: v.beginline || 0,
+    column: v.begincolumn || 0,
+    severity: getPmdSeverity(v),
+    rule: v.rule || "",
+    message: v.description || v.rule || "",
+    description: getPmdDescription(detail, v),
+    impact: getPmdImpact(detail, v),
+    fix: null,
+    suggestion: getPmdSuggestion(v, detail)
+  };
+}
+
+function getPmdSeverity(v) {
+  return (v.priority && v.priority <= 2) ? "error" : "warn";
+}
+function getPmdDescription(detail, v) {
+  return detail.description || v.description || v.rule || "";
+}
+function getPmdImpact(detail, v) {
+  return detail.impact || defaultImpact(v.rule);
+}
+function getPmdSuggestion(v, detail) {
+  return suggestionForPmd(v.rule) || detail.suggestion || "Xem lại rule và refactor theo khuyến nghị.";
 }
 
 function collectAllIssues({ eslintResult, ruffResult, pmdResult }) {
@@ -137,36 +165,31 @@ function mapDuplicationBlocks(jscpdResult, projectPath) {
 // }
 function detectLanguages(projectPath) {
   console.log("[detectLanguages] projectPath =", projectPath);
-
-  const jsFiles = glob.sync("**/*.{js,jsx,ts,tsx}", {
-    cwd: projectPath,
-    nodir: true,
-    absolute: true
-  });
-
-  const pyFiles = glob.sync("**/*.py", {
-    cwd: projectPath,
-    nodir: true,
-    absolute: true
-  });
-
-  const javaFiles = glob.sync("**/*.java", {
-    cwd: projectPath,
-    nodir: true,
-    absolute: true
-  });
-
-  console.log("[detectLanguages] found:", {
-    js: jsFiles,
-    py: pyFiles,
-    java: javaFiles
-  });
-
+  const jsFiles = findFiles(projectPath, "**/*.{js,jsx,ts,tsx}");
+  const pyFiles = findFiles(projectPath, "**/*.py");
+  const javaFiles = findFiles(projectPath, "**/*.java");
+  logFoundLanguages(jsFiles, pyFiles, javaFiles);
   return {
     hasJS: jsFiles.length > 0,
     hasPython: pyFiles.length > 0,
     hasJava: javaFiles.length > 0
   };
+}
+
+function findFiles(projectPath, pattern) {
+  return glob.sync(pattern, {
+    cwd: projectPath,
+    nodir: true,
+    absolute: true
+  });
+}
+
+function logFoundLanguages(jsFiles, pyFiles, javaFiles) {
+  console.log("[detectLanguages] found:", {
+    js: jsFiles,
+    py: pyFiles,
+    java: javaFiles
+  });
 }
 
 
@@ -175,7 +198,7 @@ function detectLanguages(projectPath) {
 
 
 function logWarn(label, error) {
-  // eslint-disable-next-line no-console
+
   console.warn(`${label} failed:`, error?.message || error);
 }
 
@@ -237,31 +260,23 @@ async function runJavaAnalyses(projectPath, hasJava) {
 async function analyzeProject(projectPath, options = {}) {
   if (!options.projectId) {
     throw new Error("analyzeProject requires projectId");
-    }
+  }
   const analysisId = options.analysisId || uuid();
   const sourceInfo = options.sourceInfo || null;
+  // Run all tool analyses
   const eslintResult = await runEslint(projectPath);
   const clocResult = await runCloc(projectPath);
   const jscpdResult = await runJscpd(projectPath);
-
-
-  // Debug: log projectPath và kết quả detectLanguages
-  console.log("[analyzeProject] projectPath=", projectPath);
-  const { hasJS, hasPython, hasJava } = detectLanguages(projectPath);
-  console.log("[analyzeProject] detectLanguages:", { hasJS, hasPython, hasJava });
-  if (!hasJS && !hasPython && !hasJava) {
-    console.warn("Không xác định được ngôn ngữ dự án từ mã nguồn. Chỉ chạy phân tích cơ bản.");
-  }
+  // Detect languages
+  const { hasPython, hasJava } = detectLanguages(projectPath);
+  // Run language-specific analyses
   const { ruffResult, radonResult } = await runPythonAnalyses(projectPath, hasPython);
   const { pmdResult } = await runJavaAnalyses(projectPath, hasJava);
-
+  // Compute scores and meta
   const lintOverride = computeLintOverride(ruffResult, pmdResult);
   const complexityOverride = computeComplexityOverride(radonResult, pmdResult);
   const projectName = resolveProjectName(projectPath, options);
   const weights = options.weights;
-  
-
-
   const scores = computeScores({
     eslint: eslintResult.raw,
     cloc: clocResult.raw,
@@ -271,47 +286,26 @@ async function analyzeProject(projectPath, options = {}) {
     complexityAvgOverride: complexityOverride,
     weights
   });
-
- const meta = {
-  lintErrors: Number(scores.meta?.lintErrors) || 0,
-  dupPercent: Number(scores.meta?.dupPercent) || 0,
-  commentDensity: Number(scores.meta?.commentDensity) || 0,
-  complexityAvg: Number(scores.meta?.complexityAvg) || 0
-};
-
-const explanation = explainQuality(meta);
-const qualityDetail = buildQualityDetail(meta);
-
-
-
-  // CÁCH ĐƠN GIẢN NHẤT: Tạo scoring_model trực tiếp từ scores.weights (đã normalize)
-  // Không cần kiểm tra gì cả, chỉ cần tạo và gán
-  const w = scores.weights || {};
-  scores.scoring_model = {
-    style: { weight: w.style || 0, basedOn: weights ? "Cấu hình người dùng" : "ESLint violations / 1k LOC" },
-    complexity: { weight: w.complexity || 0, basedOn: weights ? "Cấu hình người dùng" : "Độ phức tạp chu trình trung bình" },
-    duplication: { weight: w.duplication || 0, basedOn: weights ? "Cấu hình người dùng" : "Tỷ lệ trùng lặp JSCPD (%)" },
-    comment: { weight: w.comment || 0, basedOn: weights ? "Cấu hình người dùng" : "Mật độ chú thích (%)" }
-  };
-
-
+  const meta = buildMeta(scores);
+  const explanation = explainQuality(meta);
+  const qualityDetail = buildQualityDetail(meta);
+  // Build scoring model
+  buildScoringModel(scores, weights);
   if (sourceInfo) {
-    // Đính kèm thông tin nguồn để hỗ trợ tái lập kết quả
     scores.source = sourceInfo;
   }
-
+  // Collect issues and duplication
   const issues = collectAllIssues({ eslintResult, ruffResult, pmdResult });
   const duplicationBlocks = mapDuplicationBlocks(jscpdResult, projectPath);
-
+  // Build analysis object
   const createdAt = new Date().toISOString();
-
-  const analysis = {
+  return {
     id: analysisId,
     projectId: options.projectId,
     createdAt,
     projectName: scores.project_name || scores.projectName || projectName,
     source: sourceInfo || null,
-    scoring_model: scores.scoring_model, // Đã được tạo ở trên
+    scoring_model: scores.scoring_model,
     scores,
     explanation,
     qualityDetail,
@@ -325,8 +319,25 @@ const qualityDetail = buildQualityDetail(meta);
     lintIssues: issues,
     duplicationBlocks
   };
+}
 
-  return analysis;
+function buildMeta(scores) {
+  return {
+    lintErrors: Number(scores.meta?.lintErrors) || 0,
+    dupPercent: Number(scores.meta?.dupPercent) || 0,
+    commentDensity: Number(scores.meta?.commentDensity) || 0,
+    complexityAvg: Number(scores.meta?.complexityAvg) || 0
+  };
+}
+
+function buildScoringModel(scores, weights) {
+  const w = scores.weights || {};
+  scores.scoring_model = {
+    style: { weight: w.style || 0, basedOn: weights ? "Cấu hình người dùng" : "ESLint violations / 1k LOC" },
+    complexity: { weight: w.complexity || 0, basedOn: weights ? "Cấu hình người dùng" : "Độ phức tạp chu trình trung bình" },
+    duplication: { weight: w.duplication || 0, basedOn: weights ? "Cấu hình người dùng" : "Tỷ lệ trùng lặp JSCPD (%)" },
+    comment: { weight: w.comment || 0, basedOn: weights ? "Cấu hình người dùng" : "Mật độ chú thích (%)" }
+  };
 }
 
 module.exports = { analyzeProject };

@@ -47,7 +47,6 @@ async function getProjectById(userId, projectId) {
   
 async function addAnalysis(userId, analysis) {
   assertAnalysisInput(userId, analysis);
-
   // Insert analyses
   const { error: aErr } = await supabaseAdmin.from("analyses").insert([
     {
@@ -69,7 +68,6 @@ async function addAnalysis(userId, analysis) {
     }
   ]);
   if (aErr) throw aErr;
-
   // Insert issues
   const issues = (analysis.issues || []).map((it) => ({
     analysis_id: analysis.id,
@@ -83,22 +81,27 @@ async function addAnalysis(userId, analysis) {
     message: it.message || "",
     suggestion: it.suggestion || ""
   }));
+  await insertIssuesWithRollback(issues, analysis, userId);
+  return analysis;
+}
 
+async function insertIssuesWithRollback(issues, analysis, userId) {
   try {
     if (issues.length > 0) {
       const { error: iErr } = await supabaseAdmin.from("analysis_issues").insert(issues);
       if (iErr) throw iErr;
     }
   } catch (err) {
-    // Best-effort rollback to avoid orphan analyses when issue insert fails
-    process.stderr.write(
-      `addAnalysis failed while inserting issues; rolling back analysis: ${analysis.id} user=${userId} err=${err?.message || err}\n`
-    );
-    await supabaseAdmin.from("analyses").delete().eq("id", analysis.id).eq("user_id", userId);
-    throw err;
+    await rollbackAnalysisInsert(analysis, userId, err);
   }
+}
 
-  return analysis;
+async function rollbackAnalysisInsert(analysis, userId, err) {
+  process.stderr.write(
+    `addAnalysis failed while inserting issues; rolling back analysis: ${analysis.id} user=${userId} err=${err?.message || err}\n`
+  );
+  await supabaseAdmin.from("analyses").delete().eq("id", analysis.id).eq("user_id", userId);
+  throw err;
 }
 
 async function countAnalysesTotal(userId) {
@@ -126,6 +129,7 @@ async function countAnalysesSince(userId, sinceIso) {
 
 async function getAllAnalyses(userId) {
   if (!userId) throw new Error("getAllAnalyses requires authenticated userId");
+
   const { data, error } = await supabaseAdmin
     .from("analyses")
     .select(`
@@ -140,33 +144,43 @@ async function getAllAnalyses(userId) {
       quality_level,
       meta,
       metrics,
-      created_at
+      created_at,
+      projects!inner (
+        id,
+        is_deleted
+      )
     `)
     .eq("user_id", userId)
+    .eq("projects.is_deleted", false)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
 
-  // Trả về gần giống format cũ để FE đỡ sửa
   return (data || []).map((row) => ({
     id: row.id,
-    
+
     createdAt: row.created_at,
     projectId: row.project_id,
     projectName: row.project_name,
     displayName: row.display_name,
     versionLabel: row.version_label,
     versionIndex: row.version_index,
-    
+
     scores: {
       project_name: row.project_name,
-      summary: { overall: row.overall_score, quality_level: row.quality_level },
+      summary: {
+        overall: row.overall_score,
+        quality_level: row.quality_level
+      },
       meta: row.meta,
       metrics: row.metrics,
       created_at: row.created_at
     }
   }));
 }
+
+    
+    
 
 async function getAnalysisById(userId, id) {
   if (!userId) throw new Error("getAnalysisById requires authenticated userId");
@@ -176,64 +190,33 @@ async function getAnalysisById(userId, id) {
     .eq("id", id)
     .eq("user_id", userId)
     .maybeSingle();
-
   if (aErr) throw aErr;
   if (!a) return null;
-
   const { data: issues, error: iErr } = await supabaseAdmin
     .from("analysis_issues")
     .select("*")
     .eq("analysis_id", id)
     .order("id", { ascending: true });
-
   if (iErr) throw iErr;
+  const scoringModel = getScoringModel(a);
+  const duplicationBlocks = buildDuplicationBlocks(a.jscpd_result);
+  const qualityDetail = getQualityDetail(a);
+  return buildAnalysisResult(a, issues, scoringModel, duplicationBlocks, qualityDetail);
+}
 
-  // FE của bạn cần analysis.scores + issues
+function getScoringModel(a) {
   let scoringModel = a.raw_scores?.scoring_model || null;
-  
-  // Nếu không có scoring_model trong raw_scores, tạo từ weights nếu có
   if (!scoringModel && a.raw_scores?.weights) {
-    const weights = a.raw_scores.weights;
-    scoringModel = {
-      style: {
-        weight: weights.style || 0,
-        basedOn: "Cấu hình người dùng"
-      },
-      complexity: {
-        weight: weights.complexity || 0,
-        basedOn: "Cấu hình người dùng"
-      },
-      duplication: {
-        weight: weights.duplication || 0,
-        basedOn: "Cấu hình người dùng"
-      },
-      comment: {
-        weight: weights.comment || 0,
-        basedOn: "Cấu hình người dùng"
-      }
-    };
-    // Cập nhật lại raw_scores để có scoring_model cho lần sau
-    if (a.raw_scores) {
-      a.raw_scores.scoring_model = scoringModel;
-    }
+    scoringModel = buildScoringModelFromWeights(a.raw_scores.weights);
+    if (a.raw_scores) a.raw_scores.scoring_model = scoringModel;
   }
-  
-  // Đảm bảo scores object cũng có scoring_model
   if (a.raw_scores && !a.raw_scores.scoring_model && scoringModel) {
     a.raw_scores.scoring_model = scoringModel;
   }
-  
-  const duplicationBlocks = Array.isArray(a.jscpd_result?.raw?.duplicates)
-    ? a.jscpd_result.raw.duplicates.map((d) => ({
-        lines: d.lines || 0,
-        tokens: d.tokens || 0,
-        files: [d.firstFile, d.secondFile],
-        fragment: d.fragment || null,
-        suggestion: "Tách đoạn trùng thành hàm/tiện ích dùng chung (DRY)."
-      }))
-    : [];
+  return scoringModel;
+}
 
-  // Tự động tính lại qualityDetail nếu chưa có
+function getQualityDetail(a) {
   let qualityDetail = a.raw_scores?.qualityDetail;
   if (!qualityDetail && a.raw_scores?.meta) {
     try {
@@ -242,7 +225,10 @@ async function getAnalysisById(userId, id) {
       qualityDetail = null;
     }
   }
+  return qualityDetail;
+}
 
+function buildAnalysisResult(a, issues, scoringModel, duplicationBlocks, qualityDetail) {
   return {
     id: a.id,
     createdAt: a.created_at,
@@ -256,41 +242,68 @@ async function getAnalysisById(userId, id) {
     source: a.raw_scores?.source || null,
     clocResult: a.cloc_result || null,
     jscpdResult: a.jscpd_result || null,
-    scoring_model: scoringModel, // snake_case để tương thích với frontend
-    scoringModel, // camelCase để tương thích ngược
+    scoring_model: scoringModel,
+    scoringModel,
     duplicationBlocks,
     qualityDetail,
-    issues: (issues || []).map((it) => {
-      const detail = explainRule(it.rule);
-      return {
-        tool: it.tool,
-        file: it.file_path,
-        line: it.line || 0,
-        column: it.column_number || 0,
-        severity: it.severity || "warn",
-        rule: it.rule || "",
-        message: it.message || "",
-        description: detail.description || it.message || "",
-        impact: detail.impact || defaultImpact(it.rule),
-        suggestion: it.suggestion || detail.suggestion || ""
-      };
-    }),
-    lintIssues: (issues || []).map((it) => {
-      const detail = explainRule(it.rule);
-      return {
-        tool: it.tool,
-        file: it.file_path,
-        line: it.line || 0,
-        column: it.column_number || 0,
-        severity: it.severity || "warn",
-        rule: it.rule || "",
-        message: it.message || "",
-        description: detail.description || it.message || "",
-        impact: detail.impact || defaultImpact(it.rule),
-        suggestion: it.suggestion || detail.suggestion || ""
-      };
-    })
+    issues: (issues || []).map(mapAnalysisIssue),
+    lintIssues: (issues || []).map(mapAnalysisIssue)
   };
+}
+
+function buildScoringModelFromWeights(weights) {
+  return {
+    style: { weight: weights.style || 0, basedOn: "Cấu hình người dùng" },
+    complexity: { weight: weights.complexity || 0, basedOn: "Cấu hình người dùng" },
+    duplication: { weight: weights.duplication || 0, basedOn: "Cấu hình người dùng" },
+    comment: { weight: weights.comment || 0, basedOn: "Cấu hình người dùng" }
+  };
+}
+
+function buildDuplicationBlocks(jscpdResult) {
+  if (!Array.isArray(jscpdResult?.raw?.duplicates)) return [];
+  return jscpdResult.raw.duplicates.map((d) => ({
+    lines: d.lines || 0,
+    tokens: d.tokens || 0,
+    files: [d.firstFile, d.secondFile],
+    fragment: d.fragment || null,
+    suggestion: "Tách đoạn trùng thành hàm/tiện ích dùng chung (DRY)."
+  }));
+}
+
+function mapAnalysisIssue(it) {
+  const detail = explainRule(it.rule);
+  return {
+    tool: it.tool,
+    file: it.file_path,
+    line: getIssueLine(it),
+    column: getIssueColumn(it),
+    severity: getIssueSeverity(it),
+    rule: it.rule || "",
+    message: it.message || "",
+    description: getIssueDescription(detail, it),
+    impact: getIssueImpact(detail, it),
+    suggestion: getIssueSuggestion(it, detail)
+  };
+}
+
+function getIssueLine(it) {
+  return it.line || 0;
+}
+function getIssueColumn(it) {
+  return it.column_number || 0;
+}
+function getIssueSeverity(it) {
+  return it.severity || "warn";
+}
+function getIssueDescription(detail, it) {
+  return detail.description || it.message || "";
+}
+function getIssueImpact(detail, it) {
+  return detail.impact || defaultImpact(it.rule);
+}
+function getIssueSuggestion(it, detail) {
+  return it.suggestion || detail.suggestion || "";
 }
 
 module.exports = {

@@ -260,232 +260,242 @@ const upload = multer({
 });
 
 
-router.post("/analyze", requireAuth, upload.single("projectZip"), async (req, res) => {
-  let zipPath = req.file?.path;
-  let extractDir = req.file ? path.join(uploadDir, `${req.file.filename}_extracted`) : null;
-  
-  try {
-    // 1️⃣ Chuẩn hóa request
-    const ctx = ensureUploadRequest(req);
-
-    console.log("🚨 ANALYZE INPUT", {
-    projectId: ctx.projectId,
-    projectName: ctx.projectName,
-    body: req.body
-    });
-    
-    // 2️⃣ Kiểm tra quota (CHỈ 1 LẦN)
-    await enforceQuota(ctx.userId);
-
-    let projectId = ctx.projectId;
-    let projectName = ctx.projectName;
-    const versionLabel = req.body.versionLabel;
-
-    // 3️⃣ Giải nén ZIP (CHỈ 1 LẦN)
-    extractZip(ctx.zipPath, ctx.extractDir);
-
-    // 4️⃣ Phát hiện ngôn ngữ từ FILE THỰC
-    const lang = detectLanguageByFiles(ctx.extractDir);
-    if (!lang) {
-      return res.status(400).json({
-        error: "LANGUAGE_DETECT_FAIL",
-        message: "Không xác định được ngôn ngữ dự án từ mã nguồn."
-      });
+// Helper to get or create project
+async function getOrCreateProject(ctx, req, lang) {
+  let projectId = ctx.projectId;
+  let projectName = ctx.projectName;
+  if (!projectId) {
+    if (!ctx.projectName) {
+      throw new HttpError(400, "projectId or projectName is required");
     }
-
-    // 5️⃣ Tạo hoặc dùng lại project (FIX TRÙNG PROJECT)
-        if (!projectId) {
-          if (!ctx.projectName) {
-            throw new HttpError(400, "projectId or projectName is required");
-          }
-
-          // 🔍 KIỂM TRA PROJECT ĐÃ TỒN TẠI CHƯA
-          const { data: existingProject, error: findErr } =
-            await require("../db/supabase").supabaseAdmin
-              .from("projects")
-              .select("id, name, language")
-              .eq("user_id", ctx.userId)
-              .eq("name", ctx.projectName)
-              .eq("is_deleted", false)
-              .maybeSingle();
-
-          if (findErr) throw findErr;
-
-          if (existingProject) {
-            // ✅ DÙNG LẠI PROJECT CŨ
-            projectId = existingProject.id;
-            projectName = existingProject.name;
-          } else {
-            // ✅ TẠO PROJECT MỚI
-            const project = await projectStore.createProject(ctx.userId, {
-              name: ctx.projectName,
-              description: req.body.description || null,
-              language: lang
-            });
-
-            projectId = project.id;
-            projectName = project.name;
-          }
-        }
-
-
-    // 6️⃣ Lấy project từ DB
-    const { data: project, error: projectError } =
+    const { data: existingProject, error: findErr } =
       await require("../db/supabase").supabaseAdmin
         .from("projects")
-        .select("*")
-        .eq("id", projectId)
+        .select("id, name, language")
+        .eq("user_id", ctx.userId)
+        .eq("name", ctx.projectName)
         .eq("is_deleted", false)
         .maybeSingle();
-
-      if (projectError || !project) {
-      throw new HttpError(400, "Dự án đã bị xóa hoặc không tồn tại ");
-        }
-
-    // 7️⃣ Kiểm tra mismatch ngôn ngữ
-    if (project.language && project.language !== lang) {
-      return res.status(400).json({
-        error: "SOURCE_MISMATCH",
-        message: "Mã nguồn không phù hợp với dự án đã chọn."
+    if (findErr) throw findErr;
+    if (existingProject) {
+      projectId = existingProject.id;
+      projectName = existingProject.name;
+    } else {
+      const project = await projectStore.createProject(ctx.userId, {
+        name: ctx.projectName,
+        description: req.body.description || null,
+        language: lang
       });
+      projectId = project.id;
+      projectName = project.name;
     }
+  }
+  return { projectId, projectName };
+}
 
-    // 8️⃣ Hash source (src/ nếu có, không thì root)
-    function hashDirectory(dir) {
-      const hash = crypto.createHash("sha256");
-      function walk(p) {
-        fs.readdirSync(p).forEach(f => {
-          const fp = path.join(p, f);
-          if (fs.statSync(fp).isDirectory()) walk(fp);
-          else hash.update(fs.readFileSync(fp));
-        });
-      }
-      walk(dir);
-      return hash.digest("hex");
-    }
+// Helper to get project from DB
+async function getProjectById(projectId) {
+  const { data: project, error: projectError } =
+    await require("../db/supabase").supabaseAdmin
+      .from("projects")
+      .select("*")
+      .eq("id", projectId)
+      .eq("is_deleted", false)
+      .maybeSingle();
+  if (projectError || !project) {
+    throw new HttpError(400, "Dự án đã bị xóa hoặc không tồn tại ");
+  }
+  return project;
+}
 
-    const sourceRoot = fs.existsSync(path.join(ctx.extractDir, "src"))
-      ? path.join(ctx.extractDir, "src")
-      : ctx.extractDir;
-
-    const sourceHash = hashDirectory(sourceRoot);
-
-    const userWeights = await loadUserWeights(ctx.userId);
-
-    // 9️⃣ Lấy danh sách versions và kiểm tra trùng version
-    const { data: versions, error: versionsError } =
-      await require("../db/supabase").supabaseAdmin
-        .from("versions")
-        .select(`
+// Helper to get versions and check for duplicates
+async function getVersionsAndCheck({ userId, projectId, versionLabel, sourceHash, userWeights }) {
+  const { data: versions, error: versionsError } =
+    await require("../db/supabase").supabaseAdmin
+      .from("versions")
+      .select(`
+          id,
+          label,
+          source_hash,
+          weights_snapshot,
+          projects!inner (
             id,
-            label,
-            source_hash,
-            weights_snapshot,
-            projects!inner (
-              id,
-              name,
-              user_id
-            )
-          `)
-         .eq("projects.user_id", ctx.userId)
-         .eq("projects.is_deleted", false);
-    if (versionsError) throw versionsError;
+            name,
+            user_id
+          )
+        `)
+      .eq("projects.user_id", userId)
+      .eq("projects.is_deleted", false);
+  if (versionsError) throw versionsError;
 
-    const { data: lastVersion } =
-      await require("../db/supabase").supabaseAdmin
-        .from("versions")
-        .select("version_index")
-        .eq("project_id", projectId)
-        .order("version_index", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+  const { data: lastVersion } =
+    await require("../db/supabase").supabaseAdmin
+      .from("versions")
+      .select("version_index")
+      .eq("project_id", projectId)
+      .order("version_index", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    const versionIndex = (lastVersion?.version_index || 0) + 1;
+  const versionIndex = (lastVersion?.version_index || 0) + 1;
 
-    if (
-        versionLabel &&
-        versions?.some(
-          v => v.label === versionLabel && v.projects.id === projectId
-        )
-      ) {
-      return res.status(400).json({
+  if (
+    versionLabel &&
+    versions?.some(
+      v => v.label === versionLabel && v.projects.id === projectId
+    )
+  ) {
+    return { error: { type: "DUPLICATE_VERSION" } };
+  }
+
+  const duplicate = versions?.find(v =>
+    v.source_hash === sourceHash &&
+    isSameWeights(v.weights_snapshot, userWeights)
+  );
+  if (duplicate) {
+    return { error: { type: "DUPLICATE_SOURCE_AND_WEIGHTS", duplicate } };
+  }
+  return { versionIndex };
+}
+
+// Helper to hash directory
+function hashDirectory(dir) {
+  const hash = crypto.createHash("sha256");
+  function walk(p) {
+    fs.readdirSync(p).forEach(f => {
+      const fp = path.join(p, f);
+      if (fs.statSync(fp).isDirectory()) walk(fp);
+      else hash.update(fs.readFileSync(fp));
+    });
+  }
+  walk(dir);
+  return hash.digest("hex");
+}
+
+
+function checkLanguageOrFail(lang, res) {
+  if (!lang) {
+    res.status(400).json({
+      error: "LANGUAGE_DETECT_FAIL",
+      message: "Không xác định được ngôn ngữ dự án từ mã nguồn."
+    });
+    return false;
+  }
+  return true;
+}
+
+function checkProjectLanguageOrFail(project, lang, res) {
+  if (project.language && project.language !== lang) {
+    res.status(400).json({
+      error: "SOURCE_MISMATCH",
+      message: "Mã nguồn không phù hợp với dự án đã chọn."
+    });
+    return false;
+  }
+  return true;
+}
+
+function handleVersionCheckError(versionCheck, res) {
+  if (versionCheck.error) {
+    if (versionCheck.error.type === "DUPLICATE_VERSION") {
+      res.status(400).json({
         error: "DUPLICATE_VERSION",
         message: "Phiên bản này đã tồn tại trong dự án."
       });
+      return true;
     }
+    if (versionCheck.error.type === "DUPLICATE_SOURCE_AND_WEIGHTS") {
+      res.status(409).json({
+        error: "DUPLICATE_SOURCE_AND_WEIGHTS",
+        message: "Dự án này đã được phân tích trước đó với cùng mã nguồn và hệ số đánh giá.",
+        existingProject: {
+          projectName: versionCheck.error.duplicate.projects.name,
+          versionLabel: versionCheck.error.duplicate.label
+        }
+      });
+      return true;
+    }
+  }
+  return false;
+}
 
-    const duplicate = versions?.find(v =>
-        v.source_hash === sourceHash &&
-        isSameWeights(v.weights_snapshot, userWeights)
-      );
+async function createNewVersion({ projectId, project, versionLabel, versionIndex, userWeights, sourceHash }) {
+  const finalVersionLabel = versionLabel || project.name;
+  const { data: newVersion, error: vErr } =
+    await require("../db/supabase").supabaseAdmin
+      .from("versions")
+      .insert({
+        project_id: projectId,
+        label: finalVersionLabel,
+        version_index: versionIndex,
+        weights_snapshot: userWeights,
+        source_hash: sourceHash,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .maybeSingle();
+  if (vErr) throw vErr;
+  return newVersion;
+}
 
-      if (duplicate) {
-        return res.status(409).json({
-          error: "DUPLICATE_SOURCE_AND_WEIGHTS",
-          message: "Dự án này đã được phân tích trước đó với cùng mã nguồn và hệ số đánh giá.",
-          existingProject: {
-            projectName: duplicate.projects.name,
-            versionLabel: duplicate.label
-          }
-        });
-      }
+async function runAnalysisAndRespond({ ctx, project, projectId, userWeights, newVersion, res }) {
+  const sourceInfo = buildSourceInfoSafe({
+    zipPath: ctx.zipPath,
+    originalName: ctx.originalName,
+    analysisId: ctx.analysisId
+  });
+  const analysis = await analyzeProject(ctx.extractDir, {
+    projectName: project.name,
+    projectId,
+    weights: userWeights,
+    analysisId: ctx.analysisId,
+    sourceInfo
+  });
+  analysis.projectId = projectId;
+  analysis.projectName = project.name;
+  analysis.versionId = newVersion.id;
+  analysis.versionLabel = newVersion.label;
+  analysis.versionIndex = newVersion.version_index;
+  analysis.displayName = `${project.name} – ${newVersion.label} (v${newVersion.version_index})`;
+  await persistAnalysis({ userId: ctx.userId, analysis });
+  res.status(201).json(analysis);
+}
 
-    // 🔟 Tạo version mới (nếu có label)
-    const finalVersionLabel = versionLabel || project.name;
-
-      const { data: newVersion, error: vErr } =
-        await require("../db/supabase").supabaseAdmin
-          .from("versions")
-          .insert({
-            project_id: projectId,
-            label: finalVersionLabel,
-            version_index: versionIndex,
-            weights_snapshot: userWeights,
-            source_hash: sourceHash,
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .maybeSingle();
-
-      if (vErr) throw vErr;
-
-
-    // 11️⃣ Chạy phân tích
-    const sourceInfo = buildSourceInfoSafe({
-      zipPath: ctx.zipPath,
-      originalName: ctx.originalName,
-      analysisId: ctx.analysisId
-    });
-
-
-    const analysis = await analyzeProject(ctx.extractDir, {
-      projectName: project.name,
+router.post("/analyze", requireAuth, upload.single("projectZip"), async (req, res) => {
+  let zipPath = req.file?.path;
+  let extractDir = req.file ? path.join(uploadDir, `${req.file.filename}_extracted`) : null;
+  try {
+    const ctx = ensureUploadRequest(req);
+    await enforceQuota(ctx.userId);
+    const versionLabel = req.body.versionLabel;
+    extractZip(ctx.zipPath, ctx.extractDir);
+    const lang = detectLanguageByFiles(ctx.extractDir);
+    if (!checkLanguageOrFail(lang, res)) return;
+    const { projectId } = await getOrCreateProject(ctx, req, lang);
+    const project = await getProjectById(projectId);
+    if (!checkProjectLanguageOrFail(project, lang, res)) return;
+    const sourceRoot = fs.existsSync(path.join(ctx.extractDir, "src"))
+      ? path.join(ctx.extractDir, "src")
+      : ctx.extractDir;
+    const sourceHash = hashDirectory(sourceRoot);
+    const userWeights = await loadUserWeights(ctx.userId);
+    const versionCheck = await getVersionsAndCheck({
+      userId: ctx.userId,
       projectId,
-      weights: userWeights,
-      analysisId: ctx.analysisId,
-      sourceInfo
+      versionLabel,
+      sourceHash,
+      userWeights
     });
-
-    // 🔴 GÁN ĐẦY ĐỦ TRƯỚC KHI LƯU
-    analysis.projectId = projectId;
-    analysis.projectName = project.name;
-
-    analysis.versionId = newVersion.id;
-    analysis.versionLabel = newVersion.label;
-    analysis.versionIndex = newVersion.version_index;
-
-    analysis.displayName =
-      `${project.name} – ${newVersion.label} (v${newVersion.version_index})`;
-
-    // ✅ LƯU SAU CÙNG
-    await persistAnalysis({ userId: ctx.userId, analysis });
-
-
-    
-
-
-    return res.status(201).json(analysis);
-
+    if (handleVersionCheckError(versionCheck, res)) return;
+    const newVersion = await createNewVersion({
+      projectId,
+      project,
+      versionLabel,
+      versionIndex: versionCheck.versionIndex,
+      userWeights,
+      sourceHash
+    });
+    await runAnalysisAndRespond({ ctx, project, projectId, userWeights, newVersion, res });
   } catch (err) {
     return handleAnalyzeError(err, res);
   } finally {
@@ -514,6 +524,28 @@ router.get("/analyses/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to load analysis", error: err.message });
   }
 });
+// ================== DELETE /api/analyses/:id ==================
+router.delete("/analyses/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await require("../db/supabase").supabaseAdmin
+      .from("analyses")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", req.user.id);
+
+    if (error) throw error;
+
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({
+      message: "Xóa phiên phân tích thất bại",
+      error: err.message
+    });
+  }
+});
+
 
 
 // ================== SETTINGS: WEIGHTS ==================

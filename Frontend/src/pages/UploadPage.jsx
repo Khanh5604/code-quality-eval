@@ -564,7 +564,7 @@ const ui = {
   },
   toggleActive: {
     background: "#e0e7ff",
-    borderColor: "#c7d2fe",
+    border: "1px solid #c7d2fe",
     color: "#1d4ed8",
   },
 
@@ -575,7 +575,7 @@ const ui = {
     textAlign: "center",
     cursor: "pointer",
   },
-  dropActive: { background: "#f1f5ff", borderColor: "#2563eb" },
+  dropActive: { background: "#f1f5ff", border: "2px dashed #2563eb" },
   dropIcon: { fontSize: 28 },
   dropTitle: { margin: "6px 0", fontWeight: 600 },
   dropHint: { fontSize: 13, color: "#475569" },
