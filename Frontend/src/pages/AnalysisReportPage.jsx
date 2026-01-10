@@ -409,20 +409,6 @@ const displayWeights = isHistoryView
             <span style={ui.badgeOutline}>0–100</span>
           </div>
           <MetricsChart metrics={scores.metrics} />
-          <div style={ui.radarExplain}>
-            <p>
-              <strong>Phong cách:</strong>{" "}
-              {scores.metrics.style < 80 ? "Thấp – nhiều lỗi lint." : "Tốt."}
-            </p>
-            <p>
-              <strong>Trùng lặp:</strong>{" "}
-              {scores.metrics.duplication < 85 ? "Cao – cần refactor." : "Thấp."}
-            </p>
-            <p>
-              <strong>Chú thích:</strong>{" "}
-              {scores.metrics.comment < 70 ? "Thiếu – cần bổ sung." : "Đạt."}
-            </p>
-          </div>
         </div>
       </section>
       {displayWeights && (
@@ -668,8 +654,6 @@ const ui = {
   scoringLabel: { fontWeight: 700 },
   scoringValue: { display: "flex", gap: 8, alignItems: "center" },
   scoringHint: { color: "#475569", fontSize: 12 },
-
-  radarExplain: { marginTop: 10, padding: 10, borderRadius: 10, background: "#f8fafc", border: "1px dashed #e2e8f0", fontSize: 14 },
 
   metricsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 },
   metricCard: { background: "#f8fafc", borderRadius: 12, padding: 12, display: "flex", gap: 12, border: "1px solid #e2e8f0" },
